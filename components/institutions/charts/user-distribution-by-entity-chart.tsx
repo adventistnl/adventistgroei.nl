@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { TrendingUp, Users } from "lucide-react"
+import { Users } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
 import { useTranslation } from "react-i18next"
 

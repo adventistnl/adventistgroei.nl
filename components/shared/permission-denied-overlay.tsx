@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { EyeOff, ShieldAlert } from 'lucide-react'
+import { EyeOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import "@/lib/i18n"

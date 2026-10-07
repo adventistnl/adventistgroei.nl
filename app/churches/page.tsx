@@ -1,4 +1,11 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
+
+import { useAvailableYears } from "@/hooks/use-available-years"
+import { AvailableYearsEntity } from "@/types/globalTypes"
+
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
@@ -8,7 +15,7 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { GenericPageSkeleton } from "@/components/shared/page-skeleton"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
@@ -27,7 +34,6 @@ import {
   Eye,
   Crown,
   Activity,
-  DollarSign,
   ChevronRight,
   Building2,
   Filter,
@@ -44,9 +50,7 @@ import { structureTranslations } from "@/lib/translations/structure"
 import { churchTranslations } from "@/lib/translations/churches"
 import { UseTable } from "@/components/ui/use-table"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { ChurchTypeBadge } from "@/components/ui/church-type-badge"
 // import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
-import { AddChurchModal, EditChurchModal, DeleteChurchModal, ChurchData, RegionData } from "@/components/modals/church"
 import { ChurchesKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
 import { PageHeader } from "@/components/shared/page-header"
 import { 
@@ -57,7 +61,6 @@ import {
 import { YearFilter } from "@/components/shared/year-filter"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
-import { ChurchActivityChart } from "@/components/churches/charts/church-activity-chart"
 import { ProjectsByChurchChart } from "@/components/churches/charts/projects-by-church-chart"
 import { MembersByChurchChart } from "@/components/churches/charts/members-by-church-chart"
 import { UsersByRoleChart } from "@/components/churches/charts/users-by-role-chart"
@@ -65,7 +68,6 @@ import { ChurchProjectOverTimeChart } from "@/components/churches/charts/church-
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { ChartHeader } from "@/components/charts/chart-header"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -78,9 +80,8 @@ import {
 import { useInstitution } from '@/contexts/institution-context'
 import { CreateChurch } from "@/types/CreateChurch"
 import { WithPermission } from "@/hocs/with-permission"
-import { PermissionResolverName, AnnualBudgetEntityType } from "@/types/graphql-global-types"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
-import { ChurchType as ChurchTypeEnum } from "@/types/graphql-global-types"
 import { useChurchActivityTimeline } from "@/hooks/use-church-activity-timeline"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
@@ -88,6 +89,12 @@ import { GridContainer } from "@/components/shared/grid-container"
 import { useHasPermission } from "@/hooks/use-has-permission"
 import { useRouter } from "next/navigation"
 import { useRegions } from "@/hooks/use-regions"
+
+const AddChurchModal = dynamic(() => import('@/components/modals/church').then(mod => mod.AddChurchModal), { ssr: false });
+const EditChurchModal = dynamic(() => import('@/components/modals/church').then(mod => mod.EditChurchModal), { ssr: false });
+const DeleteChurchModal = dynamic(() => import('@/components/modals/church').then(mod => mod.DeleteChurchModal), { ssr: false });
+const ChurchData = dynamic(() => import('@/components/modals/church').then(mod => mod.ChurchData), { ssr: false });
+const ChartHeader = dynamic(() => import('@/components/charts/chart-header').then(mod => mod.ChartHeader), { ssr: false });
 // Dados reais de igrejas virão do contexto da instituição
 
 // Timeline de solicitações de subsídio por igreja
@@ -210,10 +217,7 @@ export default function ChurchesPage() {
 
   // Year selection state
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [availableYears, setAvailableYears] = useState<number[]>(() => {
-    const current = new Date().getFullYear()
-    return [current - 2, current - 1, current]
-  })
+  const { availableYears, setAvailableYears } = useAvailableYears([AvailableYearsEntity.CHURCH])
 
   // Obter traduções para o idioma atual
   const currentLanguage = i18n?.language || 'en'

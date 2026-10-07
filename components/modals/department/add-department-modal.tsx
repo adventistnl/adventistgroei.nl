@@ -16,43 +16,21 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import {
   Layers,
-  Plus,
-  Save,
-  X,
-  Globe,
-  Calendar,
-  Building,
-  User,
-  Users,
-  Phone,
-  Mail,
-  MapPin,
   ChevronLeft,
   ChevronRight,
   Check,
-  Home,
-  DollarSign,
-  Variable,
   ChevronsUpDown,
-  Info,
-  Settings
+  Info
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"

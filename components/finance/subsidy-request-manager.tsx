@@ -5,34 +5,23 @@ import { useMutation, useQuery } from "@apollo/client"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   CheckCircle,
   CheckCircle2,
   Clock,
   XCircle,
   AlertCircle,
-  Plus,
   MoreHorizontal,
-  Edit,
-  Trash2,
   DollarSign,
-  RefreshCw,
   Eye,
   FileText,
   LayoutGrid,
   List,
-  Building,
-  User,
-  Calendar,
   TrendingUp,
   Settings,
-  Info,
   Flag,
-  Maximize2,
   X,
   Fullscreen,
   ArrowUpCircle,
@@ -75,25 +64,10 @@ import {
 } from "@/components/finance/charts"
 
 // Charts
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  Legend,
-  ResponsiveContainer
-} from "recharts"
+
+
+
+
 import { APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, UPDATE_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
 import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERIES"
 import { InlinePrivacyToggle, PrivacyWrapper } from "@/components/shared/privacy-wrapper"

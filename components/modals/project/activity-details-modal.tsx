@@ -5,37 +5,31 @@ import {
   X,
   Activity,
   DollarSign,
-  Calendar,
   User,
-  Clock,
   CheckCircle,
   AlertCircle,
   Edit3,
-  Copy,
   Check,
   Tag,
   Wrench,
   Package,
   GraduationCap,
-  ChevronDown,
   FileText,
-  Receipt,
   ExternalLink,
   Save,
   Info,
   Image,
   PanelRight,
   Flag,
-  UserPlus,
   History,
   Upload,
   Lock,
 } from "lucide-react"
-import { useQuery } from "@apollo/client"
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import { GET_PROJECT_ACTIVITY_LOGS_QUERY } from "@/graphql/queries/ACTIVITY_LOGS_QUERY"
 import { ActivityLogs } from "@/components/projects/activity-logs"
 import { ProjectActivityData } from "../../projects/project-activities-table"
-import { Badge } from "@/components/ui/badge"
 import { TagBadge } from "@/components/ui/tag-badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,11 +50,10 @@ import { Editor } from "@/components/blocks/editor-x/editor"
 import { useTranslation } from "react-i18next"
 import { useCurrency } from "@/contexts/currency-context"
 import toast from "react-hot-toast"
-import { UserSelector, type User as UserType } from "@/components/shared/user-selector"
+import { type User as UserType } from "@/components/shared/user-selector"
 import { UserMultiSelector } from "@/components/shared/user-multi-selector"
 import { ActivityTags } from "@/types/graphql-global-types"
 import { TagBadgeVariant } from "@/components/ui/tag-badge"
-import { ActivityDocumentsSection } from "@/components/projects/activity-documents-section"
 import { useActivityDocuments } from "@/hooks/use-activity-documents"
 
 // Type alias for User
@@ -123,8 +116,9 @@ export function ActivityDetailsModal({
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
 
   // Fetch activity logs
-  const { data: logsData, loading: logsLoading, refetch: refetchLogs } = useQuery(
+  const { data: logsData, loading: logsLoading, refetch: refetchLogs } = useProtectedQuery(
     GET_PROJECT_ACTIVITY_LOGS_QUERY,
+    [PermissionResolverName.ProjectActivityLogs],
     {
       variables: { activityId: activity?.id },
       skip: !activity?.id || !isSystemInfoOpen,
@@ -411,7 +405,7 @@ export function ActivityDetailsModal({
           tags: formData.tags.map(tag => normalizeActivityTag(tag) as ActivityTags),
           assignee_ids: assignedUsers.map(u => u.id),
         }
-        onSave(dataToSave)
+        await onSave(dataToSave)
         toast.success(t('common.success'))
         setHasChanges(false)
 

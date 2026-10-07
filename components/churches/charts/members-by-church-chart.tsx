@@ -7,17 +7,12 @@ import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import { ChartHeader } from "@/components/charts/chart-header"
 import {
   ChartConfig,
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
@@ -25,7 +20,6 @@ import { Button } from "@/components/ui/button"
 import { getProjectColor } from "@/lib/chart-colors"
 import { churchTranslations } from "@/lib/translations/churches"
 import { ChartLegendItem, ChartLegendContainer } from "@/components/charts/chart-legend-item"
-import { Home } from "lucide-react"
 
 interface MembersByChurchChartProps {
   churches?: any[]

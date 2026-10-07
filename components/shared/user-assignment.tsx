@@ -21,7 +21,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
-import { AvatarGroup, AvatarGroupTooltip } from "@/components/ui/avatar-group"
+import { AvatarGroup } from "@/components/ui/avatar-group"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 

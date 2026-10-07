@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -29,7 +28,7 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { Progress } from "@/components/ui/progress"
-import { Check, ChevronLeft, ChevronRight, DollarSign, Percent, Hash, Users, Shield, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronLeft, ChevronRight, DollarSign, Percent, Hash, Users, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 

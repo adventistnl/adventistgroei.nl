@@ -3,8 +3,8 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { CardTitle, CardDescription } from "@/components/ui/card"
-import { MoreHorizontal, Info, HelpCircle } from "lucide-react"
+import { CardTitle } from "@/components/ui/card"
+import { MoreHorizontal, HelpCircle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,

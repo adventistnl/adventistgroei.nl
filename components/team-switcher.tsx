@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronsUpDown, Plus, Building2, Users, MapPin, Church } from "lucide-react"
+import { ChevronsUpDown, Plus, Users, MapPin, Church } from "lucide-react"
 import { useInstitution } from "@/contexts/institution-context"
 import {
   DropdownMenu,
@@ -19,7 +19,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
-import toast from "react-hot-toast"
 
 export const InstitutionSwitcher = React.memo(function InstitutionSwitcher() {
   const { isMobile } = useSidebar()

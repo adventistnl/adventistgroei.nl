@@ -4,22 +4,16 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useMutation } from "@apollo/client"
-import { useProjectHistory, buildStatusChangedPayload } from "@/hooks/graphql/use-project-history"
+import { useProjectHistory } from "@/hooks/graphql/use-project-history"
 import {
   ArrowLeft,
   MoreVertical,
   Folder,
   Edit,
   Trash2,
-  MessageSquare,
-  Calendar,
   Sprout,
   Plus,
-  DollarSign,
-  UserPlus,
-  ChevronDown,
   Loader2,
-  Church,
   ArrowBigDownDash,
   History,
 } from "lucide-react"
@@ -59,7 +53,6 @@ import { useCurrency } from "@/contexts/currency-context"
 import { useAuth } from "@/contexts/auth-context"
 import toast from "react-hot-toast"
 import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
-import { ProjectStatus } from "@/types/graphql-global-types"
 
 // ─── Status Configuration ────────────────────────────────────────────────────
 // Single source of truth for every status. To add a new status:
@@ -294,6 +287,10 @@ export function ProjectHeader({
         errorMessage = t.status?.unvalidatedDocuments || 'All documents must be validated before concluding'
       } else if (errorCode === 'PROJECT_HAS_OPEN_SUBSIDIES') {
         errorMessage = t.status?.openSubsidies || 'All subsidies must be closed before concluding'
+      } else if (errorCode === 'INVALID_STATUS_TRANSITION') {
+        errorMessage = t.errors?.INVALID_STATUS_TRANSITION || 'Invalid status transition.'
+      } else if (errorCode === 'UNAUTHORIZED_STATUS_CHANGE') {
+        errorMessage = t.errors?.UNAUTHORIZED_STATUS_CHANGE || 'You are not authorized to change the status.'
       }
       
       toast.error(errorMessage)

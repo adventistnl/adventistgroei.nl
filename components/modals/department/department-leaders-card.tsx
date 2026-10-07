@@ -3,17 +3,13 @@
 import React, { useMemo, useState, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { Crown, ChevronDown, ChevronUp, AlertCircle, Layers, MoreVertical, Mail, Phone, User, MoreHorizontal } from "lucide-react"
+import { Crown, ChevronDown, ChevronUp, AlertCircle, Layers } from "lucide-react"
 import { departmentTranslations } from "@/lib/translations/departments"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+
+
 import { ContactViewEditModal } from "@/components/modals/contact/contact-view-edit-modal"
 import { useUpdateUserMutation } from "@/hooks/graphql/use-user-mutation"
 

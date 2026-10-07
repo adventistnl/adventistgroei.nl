@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
@@ -9,10 +12,9 @@ import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ChartHeader } from "@/components/charts/chart-header"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,13 +40,9 @@ import "@/lib/i18n"
 // Components
 import { UseTable } from "@/components/ui/use-table"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-import { RoleDistributionChart } from "@/components/charts/role-distribution-chart"
-import { RolePermissionsChart } from "@/components/charts/role-permissions-chart"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 
 // Role Modals
-import { CreateRoleModal, EditRoleModal, DeleteRoleModal } from "@/components/modals/role"
-
 // Data
 import { users } from "@/data/accessData"
 import { useRoles } from "@/hooks/use-roles"
@@ -57,6 +55,13 @@ import { AccessDenied } from "@/components/access/access-denied"
 import { useInstitution } from "@/contexts/institution-context"
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { useHasPermission } from "@/hooks/use-has-permission"
+
+const ChartHeader = dynamic(() => import('@/components/charts/chart-header').then(mod => mod.ChartHeader), { ssr: false });
+const RoleDistributionChart = dynamic(() => import('@/components/charts/role-distribution-chart').then(mod => mod.RoleDistributionChart), { ssr: false });
+const RolePermissionsChart = dynamic(() => import('@/components/charts/role-permissions-chart').then(mod => mod.RolePermissionsChart), { ssr: false });
+const CreateRoleModal = dynamic(() => import('@/components/modals/role').then(mod => mod.CreateRoleModal), { ssr: false });
+const EditRoleModal = dynamic(() => import('@/components/modals/role').then(mod => mod.EditRoleModal), { ssr: false });
+const DeleteRoleModal = dynamic(() => import('@/components/modals/role').then(mod => mod.DeleteRoleModal), { ssr: false });
 
 export default function AccessManagementPage() {
   const { t } = useTranslation()

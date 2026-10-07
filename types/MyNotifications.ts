@@ -13,6 +13,7 @@ export interface MyNotifications_myNotifications {
   type: string;
   title: string | null;
   message: string;
+  metadata: any | null;
   read_status: boolean;
   project_id: string | null;
   created_at: any;

@@ -4,7 +4,6 @@ import { useMemo } from "react"
 import { KPICards } from "@/components/shared/kpi-cards-carousel"
 import { Currency } from "@/contexts/currency-context"
 import {
-  Activity,
   Calendar,
   DollarSign,
   Globe,

@@ -3,6 +3,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { LanguagePreference } from "./globalTypes";
+
 // ====================================================
 // GraphQL query operation: User
 // ====================================================
@@ -48,7 +50,7 @@ export interface User_user {
   department_id: string | null;
   name: string;
   email: string;
-  language_preference: string;
+  language_preference: LanguagePreference;
   contact_id: string | null;
   recieve_emails: boolean;
   created_at: any;

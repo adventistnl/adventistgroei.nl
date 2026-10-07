@@ -6,11 +6,8 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { format } from "date-fns"
 import {
-  ArrowUpRight,
-  ArrowDownRight,
   Search,
   Download,
-  History,
   Building,
   RefreshCw,
   Clock,
@@ -21,10 +18,9 @@ import {
   X,
   Calendar as CalendarIcon
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import dynamic from "next/dynamic"
@@ -41,9 +37,7 @@ import { YearFilter } from "@/components/shared/year-filter"
 import { Skeleton } from "@/components/ui/skeleton"
 import toast from "react-hot-toast"
 import { Separator } from "@/components/ui/separator"
-import { StatusBadge } from "@/components/ui/status-badge"
 import { cn } from "@/lib/utils"
-import { startOfDay, endOfDay, isWithinInterval } from "date-fns"
 import { type DateRange } from "react-day-picker"
 
 /**

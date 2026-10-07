@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { GenderType } from "./globalTypes";
+import { GenderType, LanguagePreference } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: CreateUser
@@ -17,7 +17,7 @@ export interface CreateUser_createUser {
   church_id: string | null;
   name: string;
   email: string;
-  language_preference: string;
+  language_preference: LanguagePreference;
 }
 
 export interface CreateUser {

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useState, useMemo } from "react"
+import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import {
   DollarSign,
@@ -10,8 +10,7 @@ import {
   Clock,
   TrendingUp,
   PieChart as PieChartIcon,
-  BarChart3,
-  Calendar
+  BarChart3
 } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,8 +19,6 @@ import { Progress } from "@/components/ui/progress"
 import {
   Bar,
   BarChart,
-  Line,
-  LineChart,
   Pie,
   PieChart,
   Cell,

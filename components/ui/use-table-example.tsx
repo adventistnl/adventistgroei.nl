@@ -6,7 +6,7 @@ import { UseTable } from "./use-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Edit, Trash2, Eye, Users, Shield, Activity, UserX } from "lucide-react"
+import { MoreHorizontal, Edit, Eye, Users, Shield, UserX } from "lucide-react"
 
 /**
  * Exemplo de uso do componente UseTable

@@ -3,7 +3,6 @@
 import React from "react"
 import {
   Clock,
-  User,
   Edit3,
   Trash2,
   Plus,
@@ -16,7 +15,7 @@ import {
   UserMinus,
   Settings
 } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useTranslation } from "react-i18next"
 
 export interface ActivityLog {

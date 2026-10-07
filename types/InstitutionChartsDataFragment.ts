@@ -23,9 +23,16 @@ export interface InstitutionChartsDataFragment_churchesByRegion {
   fill: string;
 }
 
+export interface InstitutionChartsDataFragment_monthlyUserRegistrations {
+  __typename: "MonthlyUserRegistration";
+  month: string;
+  count: number;
+}
+
 export interface InstitutionChartsDataFragment {
   __typename: "InstitutionChartsData";
   usersByRole: InstitutionChartsDataFragment_usersByRole[];
   monthlyUserGrowth: number | null;
   churchesByRegion: InstitutionChartsDataFragment_churchesByRegion[];
+  monthlyUserRegistrations: InstitutionChartsDataFragment_monthlyUserRegistrations[];
 }

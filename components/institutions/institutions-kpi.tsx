@@ -6,8 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { 
   Building, 
-  MapPin, 
-  Church, 
   Users, 
   DollarSign, 
   TrendingUp, 

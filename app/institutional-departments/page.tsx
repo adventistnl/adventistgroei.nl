@@ -1,6 +1,13 @@
+
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import dynamic from "next/dynamic";
+
+import { useAvailableYears } from "@/hooks/use-available-years"
+import { AvailableYearsEntity } from "@/types/globalTypes"
+
+
+import React, { useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { useQuery, useMutation } from "@apollo/client"
@@ -18,7 +25,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { UsageIndicator } from "@/components/ui/usage-indicator"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { 
   Layers, 
@@ -28,9 +35,7 @@ import {
   Edit,
   Trash2,
   Users,
-  Home,
   DollarSign,
-  Building,
   Building2,
   ContactRound,
   TrendingUp,
@@ -38,7 +43,6 @@ import {
   Shield,
   ShieldAlert,
   BarChart3,
-  MapPin,
   User,
   ChevronRight
 } from "lucide-react"
@@ -50,17 +54,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"
-import { DataTable } from "@/components/ui/data-table"
-import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
-import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
-import { DepartmentsKPICards, KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
-import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
+import { KPICardData, KPICards } from "@/components/shared/kpi-cards-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ChartHeader } from "@/components/charts/chart-header"
 import { Crown } from "lucide-react"
 import {
   Breadcrumb,
@@ -79,19 +78,24 @@ import {
    InstitutionById_institution_churches as ChurchData
 } from "@/types/InstitutionById"
 import { PermissionResolverName } from "@/types/graphql-global-types"
-import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
-import { DepartmentActivityChart } from "@/components/institutions/charts/department-activity-chart"
 import { InstitutionalDepartmentProjectOverTimeChart } from "@/components/institutions/charts/institutional-department-project-over-time-chart"
 import { GridContainer } from "@/components/shared/grid-container"
-import { DepartmentLeaderInfoCard } from "@/components/modals/department/department-leader-info-card"
-import { DepartmentProjectsCard } from "@/components/modals/department/department-projects-card"
-import { DepartmentLeadersCard } from "@/components/modals/department/department-leaders-card"
 import { PrivacyWrapper, InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { createPrivacyConfig } from "@/config/privacy-roles.config"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
 import { GlobalPrivacyToggle } from "@/components/shared/global-privacy-toggle"
 import { YearFilter } from "@/components/shared/year-filter"
+
+const AddDepartmentModal = dynamic(() => import('@/components/modals/department').then(mod => mod.AddDepartmentModal), { ssr: false });
+const EditDepartmentModal = dynamic(() => import('@/components/modals/department').then(mod => mod.EditDepartmentModal), { ssr: false });
+const DeleteDepartmentModal = dynamic(() => import('@/components/modals/department').then(mod => mod.DeleteDepartmentModal), { ssr: false });
+const ContactViewEditModal = dynamic(() => import('@/components/modals/contact').then(mod => mod.ContactViewEditModal), { ssr: false });
+const ContactData = dynamic(() => import('@/components/modals/contact').then(mod => mod.ContactData), { ssr: false });
+const ChartHeader = dynamic(() => import('@/components/charts/chart-header').then(mod => mod.ChartHeader), { ssr: false });
+const DepartmentLeaderInfoCard = dynamic(() => import('@/components/modals/department/department-leader-info-card').then(mod => mod.DepartmentLeaderInfoCard), { ssr: false });
+const DepartmentProjectsCard = dynamic(() => import('@/components/modals/department/department-projects-card').then(mod => mod.DepartmentProjectsCard), { ssr: false });
+const DepartmentLeadersCard = dynamic(() => import('@/components/modals/department/department-leaders-card').then(mod => mod.DepartmentLeadersCard), { ssr: false });
 
 
 /**
@@ -104,10 +108,7 @@ export default function DepartmentsPage() {
   const { t, i18n } = useTranslation()
   const [refreshing, setRefreshing] = useState(false)
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [availableYears, setAvailableYears] = useState<number[]>(() => {
-    const currentYear = new Date().getFullYear()
-    return [currentYear, currentYear - 1, currentYear - 2].sort((a, b) => b - a)
-  })
+  const { availableYears, setAvailableYears } = useAvailableYears([AvailableYearsEntity.DEPARTMENT])
   const [pageFilters, setPageFilters] = useState<Record<string, any>>({
     status: "true", // Default: active departments only
     budget_status: "" // Default: all

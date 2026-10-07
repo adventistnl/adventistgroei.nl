@@ -38,9 +38,7 @@ import {
   Globe,
   Mail,
   Phone,
-  MapPin,
   FileText,
-  User,
   Building,
   Check,
   ChevronsUpDown

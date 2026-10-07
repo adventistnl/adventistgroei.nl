@@ -1,5 +1,10 @@
+
 "use client"
 
+import dynamic from "next/dynamic";
+
+import { useAvailableYears } from "@/hooks/use-available-years"
+import { AvailableYearsEntity } from "@/types/globalTypes"
 import React, { useState, useMemo, Suspense } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@apollo/client"
@@ -17,11 +22,10 @@ import { useRegions } from "@/hooks/use-regions"
 // UI Components
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { UseTable } from "@/components/ui/use-table"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -67,7 +71,6 @@ import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { GridContainer } from "@/components/shared/grid-container"
 import { EntityInfoCard, EntityInfoCardAction } from "@/components/shared/entity-info-card"
-import { ChartHeader } from "@/components/charts/chart-header"
 import { YearFilter } from "@/components/shared/year-filter"
 
 // Modals - Lazy loaded
@@ -102,6 +105,8 @@ import {
   type EnrichedChurch 
 } from "@/lib/church-region-matcher"
 
+const ChartHeader = dynamic(() => import('@/components/charts/chart-header').then(mod => mod.ChartHeader), { ssr: false });
+
 
 export default function InstitutionsPage() {
   // ============================================================================
@@ -135,10 +140,7 @@ export default function InstitutionsPage() {
   
   // Year filter states
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [availableYears, setAvailableYears] = useState<number[]>(() => {
-    const currentYear = new Date().getFullYear()
-    return [currentYear, currentYear - 1, currentYear - 2].sort((a, b) => b - a)
-  })
+  const { availableYears, setAvailableYears } = useAvailableYears([AvailableYearsEntity.INSTITUTION])
 
   // ============================================================================
   // GRAPHQL QUERIES
@@ -561,13 +563,15 @@ export default function InstitutionsPage() {
     {
       label: t('institutions.actions.edit_institution'),
       icon: Edit,
-      onClick: handleEditInstitution
+      onClick: handleEditInstitution,
+      requiredPermissions: [PermissionResolverName.UpdateInstitution]
     },
     {
       label: t('institutions.actions.delete_institution'),
       icon: Trash2,
       onClick: handleDeleteInstitution,
-      variant: "destructive"
+      variant: "destructive",
+      requiredPermissions: [PermissionResolverName.DeleteInstitution]
     }
   ], [t, handleViewInstitutionContact, handleEditInstitution, handleDeleteInstitution])
 

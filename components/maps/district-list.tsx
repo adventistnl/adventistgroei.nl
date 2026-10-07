@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { districts, District } from '@/lib/districts';
+import { districts } from '@/lib/districts';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin } from 'lucide-react';

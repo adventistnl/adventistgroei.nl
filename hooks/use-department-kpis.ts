@@ -1,5 +1,6 @@
-import { useQuery } from "@apollo/client";
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query";
 import { GET_DEPARTMENT_KPIS_QUERY } from "@/graphql/queries/DEPARTMENT_KPI_QUERY";
+import { PermissionResolverName } from "@/types/graphql-global-types";
 
 interface DepartmentKPIs {
   totalDepartments: number;
@@ -51,8 +52,13 @@ interface UseDepartmentKPIsOptions {
 export function useDepartmentKPIs(options: UseDepartmentKPIsOptions = {}) {
   const { institution_id, church_id, selectedYear, skip = false } = options;
 
-  const { data, loading, error, refetch } = useQuery<DepartmentKPIsQueryData>(
+  const { data, loading, error, refetch } = useProtectedQuery<DepartmentKPIsQueryData>(
     GET_DEPARTMENT_KPIS_QUERY,
+    [
+      PermissionResolverName.DepartmentKpIs,
+      PermissionResolverName.DepartmentActivityData,
+      PermissionResolverName.DepartmentBudgetTimeline
+    ],
     {
       variables: {
         institution_id,
@@ -61,7 +67,8 @@ export function useDepartmentKPIs(options: UseDepartmentKPIsOptions = {}) {
       },
       skip: skip || !institution_id,
       fetchPolicy: "cache-and-network",
-    }
+    },
+    true // requireAll = true
   );
 
   return {

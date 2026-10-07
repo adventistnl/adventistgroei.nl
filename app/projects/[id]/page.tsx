@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
@@ -10,75 +13,32 @@ import { AdjustmentNotificationBanner } from "@/components/projects/adjustment-n
 import { ReceiptStatusBanner } from "@/components/projects/receipt-status-banner"
 import { ProjectActivitiesFilters } from "@/components/projects/project-activities-filters"
 import { ProjectActivitiesTable, ProjectActivityData } from "@/components/projects/project-activities-table"
-import { ProjectSubsidiesTable, SubsidyRequestData, ActivityData } from "@/components/projects/project-subsidies-table"
+import { SubsidyRequestData, ActivityData } from "@/components/projects/project-subsidies-table"
 import { SubsidyRequestsContainer } from "@/components/projects/subsidy-requests-container"
 import { SubsidyRequestCardData } from "@/components/projects/subsidy-request-card"
 import { OpenRequestOverlay } from "@/components/projects/open-request-overlay"
-import { KanbanStatusTransitionModal } from "@/components/modals/project/kanban-status-transition-modal"
 import { SubsidyActivityChart } from "@/components/projects/charts/subsidy-activity-chart"
 import { CommunicationCardData } from "@/components/projects/communication-card"
 import { GridContainer } from "@/components/shared/grid-container"
 import { KPICards } from "@/components/shared/kpi-cards-carousel"
 import { ProjectModalsWrapper } from "@/components/projects/project-modals-wrapper"
-import { FundingDistributionModal } from "@/components/modals/project/funding-distribution-modal"
 import { projectTranslations } from "@/lib/translations/projects"
 // View subsidy modal is handled internally by SubsidyRequestsContainer
 
 import { BatchEditField } from "@/components/shared/inline-batch-editor"
-import type { EventFormData } from "@/components/modals/project/create-event-modal"
-import type { CommunicationFormData } from "@/components/modals/project/create-communication-modal"
-import type { SubsidyFormData } from "@/components/modals/project/add-subsidy-modal"
-import type { EditSubsidyFormData } from "@/components/modals/project/edit-subsidy-modal"
-import type { ActivityFormData } from "@/components/modals/project/add-activity-modal"
-import type { EditActivityFormData } from "@/components/modals/project/edit-activity-modal"
-import type { ReceiptFormData } from "@/components/modals/project/upload-receipt-modal"
-import type { ReportFormData } from "@/components/modals/project/create-report-modal"
-import type { RegisterActivityFormData } from "@/components/modals/project/register-activity-modal"
-import type { BatchEditData } from "@/components/modals/project/batch-edit-activities-modal"
-import type { SubsidyRequestData as SubsidyRequestFormData } from "@/components/modals/project/request-subsidy-modal"
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
-
 import { ProjectTableData } from "@/components/projects/projects-table"
-import { Button } from "@/components/ui/button"
 import {
   DollarSign,
   CheckCircle,
   Activity,
   Calendar,
   TrendingUp,
-  Church,
-  Lock,
   Pencil,
-  Building,
-  Home,
   FileText,
   ShieldAlert,
 } from "lucide-react"
-import { Slider } from "@/components/ui/slider"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import {
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
+
+
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 import { useQuery, useMutation } from "@apollo/client"
@@ -96,12 +56,21 @@ import { useSubsidyReceipts } from "@/hooks/use-subsidy-receipts"
 import { useCurrency } from "@/contexts/currency-context"
 import { ActivityTags, EntityType, ActivityPriority, ActivityStatus, PermissionResolverName } from "@/types/graphql-global-types"
 import type { Contact } from "@/types/graphql-global-types"
-import { AppLoader } from "@/components/shared/app-loader"
 import { ProjectDetailSkeleton } from "@/components/shared/page-skeleton"
-import { CardDescription, CardTitle } from "@/components/ui/card"
-import { WithPermission } from "@/hocs/with-permission"
-import { ContactViewEditModal } from "@/components/modals/contact/contact-view-edit-modal"
 
+const KanbanStatusTransitionModal = dynamic(() => import('@/components/modals/project/kanban-status-transition-modal').then(mod => mod.KanbanStatusTransitionModal), { ssr: false });
+const FundingDistributionModal = dynamic(() => import('@/components/modals/project/funding-distribution-modal').then(mod => mod.FundingDistributionModal), { ssr: false });
+const EventFormData = dynamic(() => import('@/components/modals/project/create-event-modal').then(mod => mod.EventFormData), { ssr: false });
+const CommunicationFormData = dynamic(() => import('@/components/modals/project/create-communication-modal').then(mod => mod.CommunicationFormData), { ssr: false });
+const SubsidyFormData = dynamic(() => import('@/components/modals/project/add-subsidy-modal').then(mod => mod.SubsidyFormData), { ssr: false });
+const EditSubsidyFormData = dynamic(() => import('@/components/modals/project/edit-subsidy-modal').then(mod => mod.EditSubsidyFormData), { ssr: false });
+const ActivityFormData = dynamic(() => import('@/components/modals/project/add-activity-modal').then(mod => mod.ActivityFormData), { ssr: false });
+const EditActivityFormData = dynamic(() => import('@/components/modals/project/edit-activity-modal').then(mod => mod.EditActivityFormData), { ssr: false });
+const ReceiptFormData = dynamic(() => import('@/components/modals/project/upload-receipt-modal').then(mod => mod.ReceiptFormData), { ssr: false });
+const ReportFormData = dynamic(() => import('@/components/modals/project/create-report-modal').then(mod => mod.ReportFormData), { ssr: false });
+const RegisterActivityFormData = dynamic(() => import('@/components/modals/project/register-activity-modal').then(mod => mod.RegisterActivityFormData), { ssr: false });
+const SubsidyRequestData = dynamic(() => import('@/components/modals/project/request-subsidy-modal').then(mod => mod.SubsidyRequestData), { ssr: false });
+const ContactViewEditModal = dynamic(() => import('@/components/modals/contact/contact-view-edit-modal').then(mod => mod.ContactViewEditModal), { ssr: false });
 // Helper functions for ActivityTags
 const getActivityTagLabel = (tag: ActivityTags): string => {
   const labels: Record<ActivityTags, string> = {
@@ -450,7 +419,6 @@ export default function ProjectDetailsPage() {
   const [updateProject, { loading: updateProjectLoading }] = useMutation(UPDATE_PROJECT_MUTATION, {
     onCompleted: () => {
       toast.success(t('toasts.projectUpdated') || 'Projeto atualizado com sucesso', { duration: 3000 })
-      logHistory({ type: ProjectHistoryType.BUDGET_UPDATED })
       refetchProject()
       setIsFundingDistributionModalOpen(false)
     },
@@ -489,8 +457,22 @@ export default function ProjectDetailsPage() {
 
   // Reviewer actions: approve project (IN_PROGRESS) or request adjustments (ADJUSTMENTS_NEEDED)
   const [reviewUpdateProject, { loading: reviewUpdateLoading }] = useMutation(UPDATE_PROJECT_MUTATION, {
-    onError: (error) => {
-      toast.error(`${t('errors.updateError')}: ${error.message}`)
+    onError: (error: any) => {
+      let graphQLError = error?.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+      const errorCode = graphQLError?.extensions?.context?.additional?.errorCode || graphQLError?.extensions?.additional?.errorCode
+      
+      if (errorCode === 'INVALID_STATUS_TRANSITION') {
+        toast.error(t('errors.INVALID_STATUS_TRANSITION') || 'Invalid status transition.', { duration: 4000 })
+      } else if (errorCode === 'UNAUTHORIZED_STATUS_CHANGE') {
+        toast.error(t('errors.UNAUTHORIZED_STATUS_CHANGE') || 'You are not authorized to change the status.', { duration: 4000 })
+      } else if (graphQLError?.message) {
+        toast.error(`${t('errors.updateError') || 'Error updating project'}: ${graphQLError.message}`)
+      } else {
+        toast.error(`${t('errors.updateError') || 'Error updating project'}: ${error.message}`)
+      }
     }
   })
 

@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useTranslation } from "react-i18next"
@@ -32,11 +35,9 @@ import toast from "react-hot-toast"
 import { structureTranslations } from "@/lib/translations/structure"
 import { regionTranslations } from "@/lib/translations/regions"
 import { regionsPageTranslations } from "@/lib/translations/regions-page"
-import { DataTable } from "@/components/ui/data-table"
-import { AddRegionModal, EditRegionModal, DeleteRegionModal, RegionViewEditModal } from "@/components/modals/region"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { ChartHeader } from "@/components/shared/chart-header"
-import MapLibre, { NETHERLANDS_CENTER, generateCityMarkers, RegionConfig as MapRegionConfig } from "@/components/maps/map-libre-refactored"
+import MapLibre, { NETHERLANDS_CENTER, generateCityMarkers, type RegionConfig as MapRegionConfig } from "@/components/maps/map-libre-refactored"
 import { useTheme } from "next-themes"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useQuery } from "@apollo/client"
@@ -51,9 +52,15 @@ import { getCoordinatesFromZipCode } from "@/lib/geocoding"
 import { 
   enrichChurchesWithAutoLink, 
   calculateAutoLinkStats,
-  findMatchingRegion,
   type EnrichedChurch 
 } from "@/lib/church-region-matcher"
+
+const DataTable = dynamic(() => import('@/components/ui/data-table').then(mod => mod.DataTable), { ssr: false });
+const AddRegionModal = dynamic(() => import('@/components/modals/region').then(mod => mod.AddRegionModal), { ssr: false });
+const EditRegionModal = dynamic(() => import('@/components/modals/region').then(mod => mod.EditRegionModal), { ssr: false });
+const DeleteRegionModal = dynamic(() => import('@/components/modals/region').then(mod => mod.DeleteRegionModal), { ssr: false });
+const RegionViewEditModal = dynamic(() => import('@/components/modals/region').then(mod => mod.RegionViewEditModal), { ssr: false });
+
 
 /**
  * PÁGINA DE GESTÃO DE REGIÕES

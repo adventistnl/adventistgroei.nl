@@ -42,7 +42,7 @@ import {
 import toast from "react-hot-toast"
 import { useRegions } from "@/hooks/use-regions"
 import { UpdateRegionVariables } from "@/types/UpdateRegion"
-import { Region, RegionUpdateDto } from "@/types/graphql-global-types"
+import { RegionUpdateDto } from "@/types/graphql-global-types"
 import { countries, states, cities } from "@/data/geographicData"
 import { TerritoryMap } from "@/types/Terrytory"
 import { Regions_regions } from "@/types/Regions"

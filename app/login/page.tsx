@@ -18,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Eye, EyeOff, Globe, Lock, Mail, Moon, Sun } from 'lucide-react'
-import Image from 'next/image'
 import { LoginSplash } from '@/components/auth/login-splash'
 import { AdventistLogo } from '@/components/ui/adventist-logo'
 import { AuthSidebar } from '@/components/auth/auth-sidebar'

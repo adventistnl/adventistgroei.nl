@@ -48,11 +48,11 @@ export function DepartmentAllocationList({
 
   // GraphQL Hook para dados reais de KPIs
   const { data: kpisData, loading: budgetKpisLoading } = useAnnualBudgetKPIs({
+    variables: { 
+      year: typeof year === 'number' ? year : parseInt(String(year)),
+      institutionId: institutionId!
+    },
     skip: !institutionId,
-    variables: {
-      institutionId: institutionId!,
-      year: year
-    }
   })
 
   // Processar dados dos departamentos

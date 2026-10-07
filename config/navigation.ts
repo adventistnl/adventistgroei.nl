@@ -129,7 +129,7 @@ const navSections: NavSection[] = [
         items: [
           { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.AnnualBudgets], translationKey: "sidebar.annualBudget" },
           { title: "Ledger History", url: "/finance/ledger-history", permissions: [PermissionResolverName.LedgerHistory], translationKey: "sidebar.ledgerHistory" },
-          { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.SubsidyRequests], translationKey: "sidebar.subsidyApprovals" },
+          { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.SubsidyRequests, PermissionResolverName.SubsidyStatuses], translationKey: "sidebar.subsidyApprovals" },
         ],
         permissions: [],
         translationKey: "sidebar.financeManagement"
@@ -140,7 +140,7 @@ const navSections: NavSection[] = [
         icon: Users,
         items: [
           { title: "Users", url: "/users", permissions: [PermissionResolverName.Users], translationKey: "sidebar.users" },
-          { title: "Access Management", url: "/access", permissions: [PermissionResolverName.Roles], translationKey: "sidebar.accessManagement" },
+          { title: "Access Management", url: "/access", permissions: [PermissionResolverName.Users, PermissionResolverName.Roles], translationKey: "sidebar.accessManagement" },
         ],
         permissions:[],
         translationKey: "sidebar.usersAccess"
@@ -202,9 +202,9 @@ const _legacyNavMainBase: NavItem[] = [
     url: "#",
     icon: DollarSign,
     items: [
-      { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.Settings], translationKey: "sidebar.annualBudget" },
+      { title: "Annual Budget", url: "/finance/annual-budget", permissions: [PermissionResolverName.AnnualBudgets], translationKey: "sidebar.annualBudget" },
       // { title: "Funding Rules", url: "/finance/funding-rules", permissions: [PermissionResolverName.Institutions] },
-      { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.Settings, PermissionResolverName.Institutions], translationKey: "sidebar.subsidyApprovals" },
+      { title: "Subsidy Request", url: "/finance/subsidy-request", permissions: [PermissionResolverName.SubsidyRequests, PermissionResolverName.SubsidyStatuses], translationKey: "sidebar.subsidyApprovals" },
     ],
     permissions: [],
     translationKey: "sidebar.financeManagement"
@@ -215,7 +215,7 @@ const _legacyNavMainBase: NavItem[] = [
     icon: Users,
     items: [
       { title: "Users", url: "/users", permissions: [PermissionResolverName.Users], translationKey: "sidebar.users" },
-      { title: "Access Management", url: "/access", permissions: [PermissionResolverName.Roles], translationKey: "sidebar.accessManagement" },
+      { title: "Access Management", url: "/access", permissions: [PermissionResolverName.Users, PermissionResolverName.Roles], translationKey: "sidebar.accessManagement" },
     ],
     permissions:[],
     translationKey: "sidebar.usersAccess"

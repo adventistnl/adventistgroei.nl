@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
@@ -8,7 +11,6 @@ import { usePageTitle } from "@/hooks/use-page-title"
 import { LanguageSelector } from "@/components/shared/language-selector"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -17,44 +19,33 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { ReportsTable, ReportTableData } from "@/components/reports/reports-table"
-import { CreateReportModal, ReportFormData } from "@/components/modals/project/create-report-modal"
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { reportsTranslations } from "@/lib/translations/reports"
 import {
   mockReports,
   mockDepartments,
-  mockProjects,
-  reportsKPIs,
   reportsByTypeData,
   reportsByDepartmentData,
-  reportsTimelineData,
-  reportsStatusData
+  reportsTimelineData
 } from "@/data/mockData"
 import {
   FileText,
   DollarSign,
   CheckCircle,
-  Clock,
   Plus,
   RefreshCw,
   TrendingUp,
-  Building,
   Activity,
-  Calendar,
   BarChart3,
   PieChart,
   LineChart,
-  Eye,
-  Download,
-  Filter
+  Eye
 } from "lucide-react"
 import {
   Area,
   AreaChart,
   Bar,
   BarChart,
-  Line,
-  LineChart as RechartsLineChart,
   Pie,
   PieChart as RechartsPieChart,
   Cell,
@@ -72,6 +63,9 @@ import {
 import { useInstitution } from "@/contexts/institution-context"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
+
+const CreateReportModal = dynamic(() => import('@/components/modals/project/create-report-modal').then(mod => mod.CreateReportModal), { ssr: false });
+const ReportFormData = dynamic(() => import('@/components/modals/project/create-report-modal').then(mod => mod.ReportFormData), { ssr: false });
 
 // Chart configurations with duotone colors
 const reportsChartConfig = {

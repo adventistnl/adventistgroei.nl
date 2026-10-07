@@ -1,4 +1,4 @@
-import { User, Mail, Phone, MapPin, Globe } from "lucide-react"
+import { User, Mail, Phone, Globe } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { ProfileSection } from "./profile-section"
 import { ProfileField } from "./profile-field"

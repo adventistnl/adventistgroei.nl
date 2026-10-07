@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, Trash2, History } from "lucide-react"
+import { Check, Trash2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR, enUS, nl, type Locale } from "date-fns/locale"
 import { useTranslation } from "react-i18next"

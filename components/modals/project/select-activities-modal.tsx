@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Badge } from "@/components/ui/badge"
 import { useCurrency } from "@/contexts/currency-context"
 import { ProjectActivityData } from "@/components/projects/project-activities-table"
 import { ActivityCard } from "@/components/shared/activity-card"

@@ -21,9 +21,7 @@ import {
   Trash2,
   Eye,
   Share,
-  Clock,
   Building,
-  FileText,
   Target
 } from "lucide-react"
 import { Separator } from "@radix-ui/react-separator"

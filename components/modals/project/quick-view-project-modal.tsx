@@ -68,7 +68,7 @@ import { BATCH_UPDATE_PROJECT_ACTIVITIES } from "@/graphql/mutations/PROJECT_ACT
 import { REQUEST_SUBSIDY_REFUND } from "@/graphql/mutations/REFUND_MUTATIONS"
 import { SubsidyRequestOption } from "@/components/modals/project/kanban-status-transition-modal"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
-import { useProjectHistory, buildStatusChangedPayload, buildCommentPayload } from "@/hooks/graphql/use-project-history"
+import { useProjectHistory, buildCommentPayload } from "@/hooks/graphql/use-project-history"
 import { useProjectAdjustments } from "@/hooks/graphql/use-project-adjustments"
 import {
   PROJECT_STATUS_CONFIG,

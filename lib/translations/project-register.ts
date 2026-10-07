@@ -256,6 +256,9 @@ export const projectRegisterTranslations = {
       draftLoaded: "Draft loaded",
       draftCleared: "Draft cleared"
     },
+    errors: {
+      churchHasNoLeader: "Church has no leader assigned. Please assign a leader to the church before creating a project."
+    },
     activityGroups: {
       title: "Activity Groups",
       totalActivities: "activities",
@@ -410,7 +413,9 @@ export const projectRegisterTranslations = {
       accommodation: "Accommodation",
       technology: "Technology",
       maintenance: "Maintenance",
-      supplies: "Supplies"
+      supplies: "Supplies",
+      churchPlanting: "Church Planting",
+      specialProject: "Special Project"
     },
     fundingDistribution: {
       financialAnalysis: "Project financial analysis",
@@ -708,6 +713,9 @@ export const projectRegisterTranslations = {
       draftLoaded: "Rascunho carregado",
       draftCleared: "Rascunho limpo"
     },
+    errors: {
+      churchHasNoLeader: "A igreja não possui um líder atribuído. Por favor, atribua um líder à igreja antes de criar um projeto."
+    },
     highlights: {
       totalBudget: "Orçamento Total",
       selfContribution: "Contribuição da Igreja",
@@ -895,7 +903,9 @@ export const projectRegisterTranslations = {
       accommodation: "Hospedagem",
       technology: "Tecnologia",
       maintenance: "Manutenção",
-      supplies: "Suprimentos"
+      supplies: "Suprimentos",
+      churchPlanting: "Plantação de Igreja",
+      specialProject: "Projeto Especial"
     },
     fundingDistribution: {
       financialAnalysis: "Análise financeira do projeto",
@@ -1141,6 +1151,9 @@ export const projectRegisterTranslations = {
       draftLoaded: "Concept geladen",
       draftCleared: "Concept gewist"
     },
+    errors: {
+      churchHasNoLeader: "De gemeente heeft geen toegewezen leider. Wijs een leider toe aan de gemeente voordat u een project aanmaakt."
+    },
     activityGroups: {
       title: "Activiteitsgroepen",
       totalActivities: "activiteiten",
@@ -1283,7 +1296,9 @@ export const projectRegisterTranslations = {
       accommodation: "Accommodatie",
       technology: "Technologie",
       maintenance: "Onderhoud",
-      supplies: "Benodigdheden"
+      supplies: "Benodigdheden",
+      churchPlanting: "Gemeentestichting",
+      specialProject: "Speciaal Project"
     },
     fundingDistribution: {
       financialAnalysis: "Financiële projectanalyse",

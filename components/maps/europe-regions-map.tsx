@@ -6,8 +6,7 @@ import {
   Geographies,
   Geography,
   ZoomableGroup,
-  Marker,
-  Annotation
+  Marker
 } from "react-simple-maps"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"

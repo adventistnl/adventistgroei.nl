@@ -2,14 +2,13 @@
 
 import React, { useState, useMemo, useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import { useRouter, useParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { AlertTriangle, ArrowLeft, CheckCircle, X, Shield, Crown, Settings, ChevronDown, ChevronRight, Save, Circle, Search, Tag, Lock, Building } from "lucide-react"
-import { CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { AlertTriangle, ArrowLeft, CheckCircle, X, Shield, Crown, ChevronDown, ChevronRight, Save, Search, Tag, Lock, Building } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"

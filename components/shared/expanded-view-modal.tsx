@@ -2,7 +2,7 @@
 
 import React, { ReactNode } from "react"
 import { Button } from "@/components/ui/button"
-import { X, List, LayoutGrid, Maximize2 } from "lucide-react"
+import { X, List, LayoutGrid } from "lucide-react"
 import { InlinePrivacyToggle } from "@/components/shared/privacy-wrapper"
 import { PrivacyConfig } from "@/contexts/privacy-context"
 

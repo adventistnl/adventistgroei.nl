@@ -101,7 +101,16 @@ function areExtraFieldsValid({
   if (selectedRoleKeyCode === 'CHURCH_MEMBER') {
     return Boolean(selectedChurch);
   }
-  if (selectedRoleKeyCode === 'INSTITUTIONAL_LEADER') {
+  if (selectedRoleKeyCode === 'CHURCH_LEADER') {
+    return Boolean(selectedChurch && selectedChurchDepartment);
+  }
+  if (selectedRoleKeyCode === 'DEPARTMENT_CHURCH_LEADER') {
+    return Boolean(selectedChurch && selectedChurchDepartment);
+  }
+  if (selectedRoleKeyCode === 'INSTITUTIONAL_LEADER' || selectedRoleKeyCode === 'INSTITUTIONAL_MEMBER') {
+    return Boolean(selectedInstitution);
+  }
+  if (selectedRoleKeyCode === 'INSTITUTIONAL_DEPARTMENT_LEADER') {
     return Boolean(selectedInstitution && selectedInstitutionDepartment);
   }
   return true;
@@ -117,10 +126,8 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
   const { data: inviteData } = useGetInstitutionsForInviteQuery();
   // Filtrar apenas a instituição ativa no contexto atual
   const institutions: InstitutionForInvite[] = useMemo(() => {
-    const all = inviteData?.institutions || [];
-    if (!currentInstitutionData?.id) return all;
-    return all.filter(inst => inst.id === currentInstitutionData.id);
-  }, [inviteData, currentInstitutionData?.id]);
+    return inviteData?.institutions || [];
+  }, [inviteData]);
   // Lista flat de igrejas apenas da instituição ativa
   const churches = useMemo(() => institutions.flatMap(inst => inst.churches || []), [institutions]);
 
@@ -551,7 +558,7 @@ export function InviteModal({ children, onInviteSent }: InviteModalProps) {
                               await generateLinkForRole({
                                 inviter_id: loggedUserId,
                                 email: '',
-                                institution_id: currentInstitutionData?.id || "",
+                                institution_id: selectedInstitution || currentInstitutionData?.id || "",
                                 language_preference: currentLanguage,
                                 role_ids: [selectedRole],
                                 church_department_id: selectedChurchDepartment,

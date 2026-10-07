@@ -18,16 +18,11 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
+
 import { PieChart } from "lucide-react"
 import { projectTranslations } from "@/lib/translations/projects"
-import { PROJECT_CHART_COLORS, getProjectColor } from "@/lib/chart-colors"
+import { getProjectColor } from "@/lib/chart-colors"
 
 interface ProjectsByDepartmentChartProps {
   data: any[]

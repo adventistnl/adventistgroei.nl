@@ -7,7 +7,6 @@ import {
   CreditCard, FileX, FileCheck, Lock,
 } from "lucide-react"
 import { useMutation } from "@apollo/client"
-import { SubsidyValidationInfo } from "./subsidy-validation-info"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -23,7 +22,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useTranslation } from "react-i18next"
 import toast from "react-hot-toast"
-import type { ProjectActivityData } from "@/components/projects/project-activities-table"
 import { SelectActivitiesModal } from "./select-activities-modal"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
@@ -31,7 +29,7 @@ import { useSubsidyModal } from "@/hooks/use-subsidy-modal"
 import { useHasPermission } from "@/hooks/use-has-permission"
 import { DELETE_SUBSIDY_REQUEST, GET_SUBSIDY_REQUESTS_BY_PROJECT } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
 import { useAuth } from "@/contexts/auth-context"
-import type { SubsidyRequestData, RequestType, RequestSubsidyModalProps } from "@/types/subsidy-request-modal.types"
+import type { RequestType, RequestSubsidyModalProps } from "@/types/subsidy-request-modal.types"
 
 // ─── Re-export types for backward compatibility ────────────────────────────────
 export type { SubsidyRequestData, RequestType } from "@/types/subsidy-request-modal.types"

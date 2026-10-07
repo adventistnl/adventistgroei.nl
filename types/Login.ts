@@ -3,6 +3,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { LanguagePreference } from "./globalTypes";
+
 // ====================================================
 // GraphQL mutation operation: Login
 // ====================================================
@@ -33,7 +35,8 @@ export interface Login_login_user {
   id: string;
   name: string;
   email: string;
-  language_preference: string;
+  institution_id: string;
+  language_preference: LanguagePreference;
   user_roles: Login_login_user_user_roles[];
 }
 
