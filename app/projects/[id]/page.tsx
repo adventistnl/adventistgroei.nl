@@ -419,7 +419,6 @@ export default function ProjectDetailsPage() {
   const [updateProject, { loading: updateProjectLoading }] = useMutation(UPDATE_PROJECT_MUTATION, {
     onCompleted: () => {
       toast.success(t('toasts.projectUpdated') || 'Projeto atualizado com sucesso', { duration: 3000 })
-      logHistory({ type: ProjectHistoryType.BUDGET_UPDATED })
       refetchProject()
       setIsFundingDistributionModalOpen(false)
     },
@@ -458,8 +457,22 @@ export default function ProjectDetailsPage() {
 
   // Reviewer actions: approve project (IN_PROGRESS) or request adjustments (ADJUSTMENTS_NEEDED)
   const [reviewUpdateProject, { loading: reviewUpdateLoading }] = useMutation(UPDATE_PROJECT_MUTATION, {
-    onError: (error) => {
-      toast.error(`${t('errors.updateError')}: ${error.message}`)
+    onError: (error: any) => {
+      let graphQLError = error?.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+      const errorCode = graphQLError?.extensions?.context?.additional?.errorCode || graphQLError?.extensions?.additional?.errorCode
+      
+      if (errorCode === 'INVALID_STATUS_TRANSITION') {
+        toast.error(t('errors.INVALID_STATUS_TRANSITION') || 'Invalid status transition.', { duration: 4000 })
+      } else if (errorCode === 'UNAUTHORIZED_STATUS_CHANGE') {
+        toast.error(t('errors.UNAUTHORIZED_STATUS_CHANGE') || 'You are not authorized to change the status.', { duration: 4000 })
+      } else if (graphQLError?.message) {
+        toast.error(`${t('errors.updateError') || 'Error updating project'}: ${graphQLError.message}`)
+      } else {
+        toast.error(`${t('errors.updateError') || 'Error updating project'}: ${error.message}`)
+      }
     }
   })
 

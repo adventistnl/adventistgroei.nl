@@ -287,6 +287,10 @@ export function ProjectHeader({
         errorMessage = t.status?.unvalidatedDocuments || 'All documents must be validated before concluding'
       } else if (errorCode === 'PROJECT_HAS_OPEN_SUBSIDIES') {
         errorMessage = t.status?.openSubsidies || 'All subsidies must be closed before concluding'
+      } else if (errorCode === 'INVALID_STATUS_TRANSITION') {
+        errorMessage = t.errors?.INVALID_STATUS_TRANSITION || 'Invalid status transition.'
+      } else if (errorCode === 'UNAUTHORIZED_STATUS_CHANGE') {
+        errorMessage = t.errors?.UNAUTHORIZED_STATUS_CHANGE || 'You are not authorized to change the status.'
       }
       
       toast.error(errorMessage)
