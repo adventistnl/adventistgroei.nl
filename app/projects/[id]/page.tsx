@@ -388,14 +388,21 @@ export default function ProjectDetailsPage() {
     },
     onError: (error) => {
       let ext = (error.graphQLErrors?.[0]?.extensions as any);
+      let apiMsg = error.graphQLErrors?.[0]?.message;
       if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
         ext = (error.networkError as any).result.errors[0].extensions;
       }
+      if (!apiMsg && (error.networkError as any)?.result?.errors?.[0]?.message) {
+        apiMsg = (error.networkError as any).result.errors[0].message;
+      }
       const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
-      if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+      if (errorCode === 'DOCUMENTS_REJECTED') {
+        toast.error(t('toasts.documentsRejected') || "Cannot approve subsidy with rejected documents", { duration: 5000 });
+      } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
         toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
       } else {
-        toast.error(`${t('errors.updateError')}: ${error.message}`)
+        const displayMsg = apiMsg && !apiMsg.includes('Received status code') ? apiMsg : error.message;
+        toast.error(`${t('errors.updateError')}: ${displayMsg}`)
       }
     }
   })
@@ -406,11 +413,22 @@ export default function ProjectDetailsPage() {
       refetchProject()
     },
     onError: (error) => {
-      const errorCode = (error.graphQLErrors?.[0]?.extensions as any)?.additional?.errorCode;
-      if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+      let ext = (error.graphQLErrors?.[0]?.extensions as any);
+      let apiMsg = error.graphQLErrors?.[0]?.message;
+      if (!ext && (error.networkError as any)?.result?.errors?.[0]?.extensions) {
+        ext = (error.networkError as any).result.errors[0].extensions;
+      }
+      if (!apiMsg && (error.networkError as any)?.result?.errors?.[0]?.message) {
+        apiMsg = (error.networkError as any).result.errors[0].message;
+      }
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+      if (errorCode === 'DOCUMENTS_REJECTED') {
+        toast.error(t('toasts.documentsRejected') || "Cannot approve subsidy with rejected documents", { duration: 5000 });
+      } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
         toast.error(t('toasts.documentsPending') || "All documents must be validated first", { duration: 5000 });
       } else {
-        toast.error(`${t('errors.updateError')}: ${error.message}`)
+        const displayMsg = apiMsg && !apiMsg.includes('Received status code') ? apiMsg : error.message;
+        toast.error(`${t('errors.updateError')}: ${displayMsg}`)
       }
     }
   })

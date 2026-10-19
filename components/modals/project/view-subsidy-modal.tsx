@@ -1957,7 +1957,7 @@ export function ViewSubsidyModal({
                                   <span>{t('subsidy.status.approved')}</span>
                                   {hasRejectedDocuments() && (
                                     <span className="text-xs text-red-600 dark:text-red-400">
-                                      {t('toasts.documentsRejected') || 'Documentos rejeitados impedem aprovação'}
+                                      {modalT.errors?.documentsRejected || 'Documentos rejeitados impedem aprovação'}
                                     </span>
                                   )}
                                   {!canValidateDocuments && !hasRejectedDocuments() && (
