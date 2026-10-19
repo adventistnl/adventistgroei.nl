@@ -18,15 +18,11 @@ import {
   Percent,
   Hash,
   Tag,
-  RefreshCw,
-  Eye,
   Copy,
   ToggleLeft,
   ToggleRight,
   LayoutGrid,
-  List,
-  Save,
-  X
+  List
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -45,13 +41,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
+
 import toast from "react-hot-toast"
 import { UseTable } from "@/components/ui/use-table"
 import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
@@ -80,8 +71,6 @@ import {
   PieChart as RechartsPieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
   Legend
 } from "recharts"
 

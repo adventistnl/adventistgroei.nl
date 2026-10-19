@@ -28,21 +28,16 @@ function getCookiesSync(): Record<string, string> {
 export function makeClient() {
   const uploadLink = createUploadLink({
     uri: config.graphqlApiUrl,
-    fetchOptions: {},
+    fetchOptions: {
+      credentials: 'include', // Envia cookies HttpOnly para o backend
+    },
+    credentials: 'include', // Configuração do apollo-upload-client
   });
 
   const authLink = setContext((operation, prevContext) => {
-    let token = "";
-    if (typeof window !== "undefined") {
-      // Buscar cookies dinamicamente em cada requisição GraphQL
-      // Isso garante que sempre usamos o token mais recente
-      const cookies = getCookiesSync();
-      token = cookies["auth-token"] || "";
-    }
     return {
       ...prevContext,
       headers: {
-        Authorization: token ? `Bearer ${token}` : "",
         "apollo-require-preflight": "true",
       },
     };
@@ -55,14 +50,9 @@ export function makeClient() {
           createClient({
             url: config.graphqlApiUrl.replace(/^http/, "ws"),
             connectionParams: () => {
-              // T13: Read token from cookie (auth-context.tsx stores it as cookie "auth-token")
-              // Previously was reading from localStorage which is always empty.
-              const token = getCookiesSync()["auth-token"] || "";
-              return {
-                headers: {
-                  Authorization: token ? `Bearer ${token}` : "",
-                },
-              };
+              // Com cookies HttpOnly, o browser envia os cookies automaticamente
+              // na requisição de handshake do WebSocket se a origin bater.
+              return {};
             },
             retryAttempts: Infinity,
             shouldRetry: () => true,

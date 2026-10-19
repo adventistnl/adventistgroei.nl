@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import React, { useState, useMemo, useEffect, useRef } from "react"
 import { useTranslation } from "react-i18next"
@@ -8,15 +11,12 @@ import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { GET_ALL_SUBSIDY_REQUESTS } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
 import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { 
   DollarSign, 
-  Plus, 
   RefreshCw, 
   MoreHorizontal,
   CheckCircle,
@@ -29,34 +29,19 @@ import {
   Settings,
   TrendingUp,
   Eye,
-  Coins,
   Download,
 } from "lucide-react"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-} from "@/components/ui/dialog"
 
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+
+
 import toast from "react-hot-toast"
 import { UseTable } from "@/components/ui/use-table"
 import { UsageIndicator } from "@/components/ui/usage-indicator"
@@ -80,13 +65,7 @@ import {
 } from "@/utils/export-annual-budget-csv"
 
 // Chart Components
-import { DepartmentSpendingChart } from "@/components/charts/annual-budget/department-spending-chart"
-import { BudgetDistributionChart } from "@/components/charts/annual-budget/budget-distribution-chart"
-import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spending-over-time-chart"
-
 // Modal Components
-import { AnnualBudgetViewEditModal, AnnualBudgetData } from "@/components/modals/annual-budget/annual-budget-view-edit-modal"
-import { DeleteBudgetModal } from "@/components/modals/annual-budget/delete-budget-modal"
 import { ConfirmationModal } from "@/components/shared/confirmation-modal"
 
 // GraphQL Hooks
@@ -108,6 +87,12 @@ import {
 } from "@/hooks/graphql/use-annual-budget-queries"
 import { GetBudgetDashboardData_annualBudgets } from "@/types/GetBudgetDashboardData"
 import { StatusBadge } from "@/components/ui/status-badge"
+
+const DepartmentSpendingChart = dynamic(() => import('@/components/charts/annual-budget/department-spending-chart').then(mod => mod.DepartmentSpendingChart), { ssr: false });
+const BudgetDistributionChart = dynamic(() => import('@/components/charts/annual-budget/budget-distribution-chart').then(mod => mod.BudgetDistributionChart), { ssr: false });
+const SpendingOverTimeChart = dynamic(() => import('@/components/charts/annual-budget/spending-over-time-chart').then(mod => mod.SpendingOverTimeChart), { ssr: false });
+const AnnualBudgetViewEditModal = dynamic(() => import('@/components/modals/annual-budget/annual-budget-view-edit-modal').then(mod => mod.AnnualBudgetViewEditModal), { ssr: false });
+const AnnualBudgetData = dynamic(() => import('@/components/modals/annual-budget/annual-budget-view-edit-modal').then(mod => mod.AnnualBudgetData), { ssr: false });
 
 /**
  * PÁGINA DE GESTÃO DE ORÇAMENTO ANUAL
@@ -166,7 +151,7 @@ export default function AnnualBudgetPage() {
   const { data: kpisData, loading: loadingKPIs, refetch: refetchKPIs } = useAnnualBudgetKPIs({
     skip: !currentInstitutionData?.id,
     variables:{
-      institutionId: currentInstitutionData?.id!,
+      institutionId: currentInstitutionData?.id || "",
       year: selectedYear
     }
   })
@@ -298,8 +283,10 @@ export default function AnnualBudgetPage() {
           id: annualBudget.id,
           year: annualBudget.year,
           planned_budget: parseFloat(annualBudget.planned_budget) || 0,
-          spentAmount: parseFloat(annualBudget.spentAmount) || 0,
-          remainingAmount: parseFloat(annualBudget.remainingAmount) || 0,
+          spentAmount: parseFloat(annualBudget.total_expenses) || 0,
+          remainingAmount: parseFloat(annualBudget.balance) || 0,
+          total_expenses: parseFloat(annualBudget.total_expenses) || 0,
+          balance: parseFloat(annualBudget.balance) || 0,
           status: annualBudget.status,
           priority: annualBudget.priority,
           category: annualBudget.category,
@@ -1773,9 +1760,9 @@ export default function AnnualBudgetPage() {
               budget={selectedRequest ? {
                 id: selectedRequest.id,
                 year: selectedRequest.year,
-                planned_budget: parseFloat(selectedRequest.allocated_amount as string) || 0,
-                total_expenses: selectedRequest.spentAmount || 0,
-                balance: selectedRequest.remainingAmount || 0,
+                planned_budget: parseFloat(selectedRequest.planned_budget as any) || 0,
+                total_expenses: parseFloat(selectedRequest.total_expenses as any) || 0,
+                balance: parseFloat(selectedRequest.balance as any) || 0,
                 notes: selectedRequest.notes || undefined,
                 approved_by: selectedRequest.approved_by || undefined,
                 created_at: selectedRequest.created_at as string,

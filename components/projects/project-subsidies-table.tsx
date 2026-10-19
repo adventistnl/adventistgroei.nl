@@ -13,15 +13,11 @@ import {
   XCircle,
   Plus,
   DollarSign,
-  User,
-  Building,
-  FileText,
   Upload,
   Activity,
   Clock,
   AlertTriangle,
-  Eye,
-  Filter
+  Eye
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"

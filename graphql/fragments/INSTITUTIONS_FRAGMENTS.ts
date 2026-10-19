@@ -177,6 +177,14 @@ export const ANNUAL_BUDGET_FRAGMENT = gql`
     planned_budget
     total_expenses
     balance
+    allocated_amount
+    approved_amount
+    notes
+    description
+    justification
+    is_locked
+    has_budget_record
+    entity_type
     status
     priority
     category
@@ -362,6 +370,10 @@ export const INSTITUTION_CHARTS_DATA_FRAGMENT = gql`
       churches
       color
       fill
+    }
+    monthlyUserRegistrations {
+      month
+      count
     }
   }
 `;

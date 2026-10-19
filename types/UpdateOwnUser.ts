@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { UserUpdateDto } from "./globalTypes";
+import { UserUpdateDto, LanguagePreference } from "./globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: UpdateOwnUser
@@ -34,7 +34,7 @@ export interface UpdateOwnUser_updateOwnUser {
   email: string;
   recieve_emails: boolean;
   contact: UpdateOwnUser_updateOwnUser_contact | null;
-  language_preference: string;
+  language_preference: LanguagePreference;
   institution_id: string;
   church_id: string | null;
   institution: UpdateOwnUser_updateOwnUser_institution | null;

@@ -41,20 +41,22 @@ interface CheckEmailAvailabilityResponse {
 }
 
 export function useSendEmailVerificationCodeMutation() {
-  return useMutation<SendEmailVerificationCodeResponse, SendEmailVerificationCodeVariables>(
-    SEND_EMAIL_VERIFICATION_CODE
-  );
+  return useMutation<
+    SendEmailVerificationCodeResponse,
+    SendEmailVerificationCodeVariables
+  >(SEND_EMAIL_VERIFICATION_CODE);
 }
 
 export function useVerifyEmailRegistrationCodeMutation() {
-  return useMutation<VerifyEmailRegistrationCodeResponse, VerifyEmailRegistrationCodeVariables>(
-    VERIFY_EMAIL_REGISTRATION_CODE
-  );
+  return useMutation<
+    VerifyEmailRegistrationCodeResponse,
+    VerifyEmailRegistrationCodeVariables
+  >(VERIFY_EMAIL_REGISTRATION_CODE);
 }
 
 export function useCheckEmailAvailability() {
   return useLazyQuery<CheckEmailAvailabilityResponse, { email: string }>(
     CHECK_EMAIL_AVAILABILITY,
-    { fetchPolicy: "network-only" }
+    { fetchPolicy: "network-only" },
   );
 }

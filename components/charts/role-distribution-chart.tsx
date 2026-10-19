@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { PROJECT_CHART_COLORS, getProjectColor } from "@/lib/chart-colors"
+import { getProjectColor } from "@/lib/chart-colors"
 
 // Função para obter cores dinâmicas dos roles
 

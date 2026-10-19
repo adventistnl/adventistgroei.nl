@@ -32,14 +32,17 @@ import { getProjectColor } from "@/lib/chart-colors"
 import { ChartHeader } from "@/components/charts/chart-header"
 
 interface UsersRegistrationOverTimeChartProps {
-  institutions: any[] // Accept any[] to handle different institution types
+  institutions?: any[] // Accept any[] to handle different institution types
+  /** Pre-calculated monthly registrations from backend (preferred) */
+  monthlyData?: { month: string; count: number }[]
   loading?: boolean
   selectedYear?: number
   defaultChartType?: "area" | "bar"
 }
 
 export function UsersRegistrationOverTimeChart({ 
-  institutions,
+  institutions = [],
+  monthlyData,
   loading,
   selectedYear,
   defaultChartType = "bar"
@@ -75,8 +78,23 @@ export function UsersRegistrationOverTimeChart({
     return config
   }, [activeInstitutions, t])
 
+  // Use pre-calculated backend data when available
+  const backendChartData = React.useMemo(() => {
+    if (!monthlyData || monthlyData.length === 0) return null
+    
+    let instKey = "totalUsers"
+    if (activeInstitutions.length > 0) {
+      instKey = activeInstitutions[0].name.toLowerCase().replace(/\s+/g, '_')
+    }
+    
+    return monthlyData.map(item => ({ date: item.month, [instKey]: item.count }))
+  }, [monthlyData, activeInstitutions])
+
   // Transform data to show dates on X-axis and institutions as separate areas
+  // Only runs when monthlyData is NOT provided (legacy fallback)
   const chartData = React.useMemo(() => {
+    if (backendChartData) return [] // skip heavy computation
+
     // Get all users from all institutions and filter by selected year
     const allUsers = activeInstitutions.flatMap((inst: any) => {
       const users = inst.users || []
@@ -129,10 +147,13 @@ export function UsersRegistrationOverTimeChart({
     )
     
     return sortedData
-  }, [institutions, activeInstitutions, selectedYear])
+  }, [institutions, activeInstitutions, selectedYear, backendChartData])
 
   // Filter data based on time range
   const filteredData = React.useMemo(() => {
+    // When backend provides monthly data, use it directly (no day-level filtering needed)
+    if (backendChartData) return backendChartData
+
     // Define date range based on selected year
     let endDate: Date
     let endDateStr: string

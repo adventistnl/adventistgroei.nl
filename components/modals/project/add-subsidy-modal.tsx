@@ -6,8 +6,7 @@ import { useTranslation } from "react-i18next"
 import { 
   DollarSign,
   Building,
-  User,
-  FileText
+  User
 } from "lucide-react"
 
 import {
@@ -38,7 +37,6 @@ import {
   mockDepartments
 } from "@/data/mockData"
 import { ProjectTableData } from "@/components/projects/projects-table"
-import { SubsidyRequestData } from "@/components/projects/project-subsidies-table"
 
 export interface SubsidyFormData {
   description: string

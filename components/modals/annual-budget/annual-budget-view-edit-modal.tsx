@@ -44,7 +44,6 @@ import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { 
-  Loader2, 
   DollarSign, 
   ChevronLeft, 
   ChevronRight, 
@@ -52,12 +51,9 @@ import {
   Calendar,
   Calculator,
   FileText,
-  CheckCircle,
-  AlertCircle,
   TrendingUp,
   Edit,
   X,
-  User,
   Copy,
   Check,
   ChevronDown,
@@ -214,9 +210,9 @@ export function AnnualBudgetViewEditModal({
   useEffect(() => {
     if (budget) {
       setFormData({
-        year: budget.year.toString(),
-        planned_budget: budget.planned_budget.toString(),
-        total_expenses: budget.total_expenses.toString(),
+        year: budget.year?.toString() || "",
+        planned_budget: budget.planned_budget?.toString() || "0",
+        total_expenses: budget.total_expenses?.toString() || "0",
         reserved: (budget.allocated_amount || 0).toString(),
         notes: budget.notes || "",
         approved_by: budget.approved_by || undefined
@@ -633,8 +629,8 @@ export function AnnualBudgetViewEditModal({
               </Label>
               <div className="flex items-center justify-between group py-2">
                 <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium ${budget.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency(budget.balance)}
+                  <span className={`text-sm font-medium ${(budget.balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(budget.balance || 0)}
                   </span>
                   <Badge 
                     variant={budget.balance >= 0 ? "default" : "destructive"}
@@ -646,7 +642,7 @@ export function AnnualBudgetViewEditModal({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => copyToClipboard(formatCurrency(budget.balance), 'balance')}
+                  onClick={() => copyToClipboard(formatCurrency(budget.balance || 0), 'balance')}
                   className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-6 w-6 hover:bg-muted"
                 >
                   {copiedField === 'balance' ? (
@@ -664,7 +660,7 @@ export function AnnualBudgetViewEditModal({
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("annual_budget.modals.summary.spent") || "Spent"}:</span>
-                  <span className="font-medium text-foreground">{formatCurrency(budget.total_expenses)}</span>
+                  <span className="font-medium text-foreground">{formatCurrency(budget.total_expenses || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("annual_budget.modals.summary.reserved") || "Reserved"}:</span>
@@ -672,15 +668,15 @@ export function AnnualBudgetViewEditModal({
                     <span className="font-medium text-foreground">{formatCurrency(budget.allocated_amount || 0)}</span>
                     {budget.total_expenses > 0 && (
                       <div className="text-xs text-muted-foreground mt-0.5">
-                        + {formatCurrency(budget.total_expenses)}
+                        + {formatCurrency(budget.total_expenses || 0)}
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="flex justify-between border-t border-border pt-2">
                   <span className="text-muted-foreground">{t("annual_budget.modals.summary.available") || "Available"}:</span>
-                  <span className={`font-semibold ${budget.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency(budget.balance)}
+                  <span className={`font-semibold ${(budget.balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(budget.balance || 0)}
                   </span>
                 </div>
               </div>

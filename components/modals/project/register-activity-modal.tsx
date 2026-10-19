@@ -14,10 +14,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -55,7 +53,7 @@ import { cn } from "@/lib/utils"
 import toast from "react-hot-toast"
 import { activityModalTranslations } from "@/lib/translations/activity-modal"
 import { UserMultiSelector, User } from "@/components/shared/user-multi-selector"
-import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
+import { UsersAvatarGroup } from "@/components/shared/users-avatar-group"
 
 // ============================================================================
 // TYPES & INTERFACES

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from "react"
-import { TrendingUp, Target, PieChart as PieChartIcon } from "lucide-react"
+import { Target, PieChart as PieChartIcon } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"

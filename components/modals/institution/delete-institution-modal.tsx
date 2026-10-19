@@ -15,7 +15,6 @@ import {
   Lock, 
   Database, 
   Users,
-  MapPin,
   Home,
   Layers
 } from "lucide-react"

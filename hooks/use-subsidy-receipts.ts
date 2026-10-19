@@ -101,6 +101,7 @@ export function useSubsidyReceipts({
 
       const response = await fetch(url, {
         method: 'GET',
+        credentials: 'include',
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
         },
@@ -215,6 +216,7 @@ export function useSubsidyReceipts({
       // Call REST endpoint
       const response = await fetch(`${apiUrl}/subsidy-receipts/upload`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
         },
@@ -298,6 +300,7 @@ export function useSubsidyReceipts({
 
       const response = await fetch(`${apiUrl}/subsidy-receipts/upload`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
         },
@@ -376,6 +379,7 @@ export function useSubsidyReceipts({
 
       const response = await fetch(`${apiUrl}/subsidy-receipts/${receiptId}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
         },
@@ -458,6 +462,7 @@ export function useSubsidyReceipts({
       // Call REST endpoint for download
       const response = await fetch(`${apiUrl}/subsidy-receipts/${receiptId}/download`, {
         method: 'GET',
+        credentials: 'include',
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
         },
@@ -502,6 +507,7 @@ export function useSubsidyReceipts({
     try {
       const response = await fetch(`${getApiUrl()}/subsidy-receipts/${receiptId}`, {
         method: 'PUT',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${getAuthToken()}`,

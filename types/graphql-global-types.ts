@@ -908,6 +908,18 @@ export type AvailabilityWhereInput = {
   user_id?: InputMaybe<StringFilter>;
 };
 
+/** Entities available for minimum year query */
+export enum AvailableYearsEntity {
+  AnnualBudget = 'ANNUAL_BUDGET',
+  Church = 'CHURCH',
+  Department = 'DEPARTMENT',
+  Institution = 'INSTITUTION',
+  Project = 'PROJECT',
+  SubsidyRequest = 'SUBSIDY_REQUEST',
+  User = 'USER'
+}
+
+
 export type BoolFilter = {
   equals?: InputMaybe<Scalars['Boolean']['input']>;
   not?: InputMaybe<NestedBoolFilter>;
@@ -1333,12 +1345,12 @@ export type CommunicationCreateDto = {
   content: Scalars['String']['input'];
   institution_id: Scalars['String']['input'];
   language_preference: LanguagePreference;
-  priority: Scalars['String']['input'];
+  priority: CommunicationPriority;
   published_at: Scalars['DateTime']['input'];
   schedule_at: Scalars['DateTime']['input'];
-  status: Scalars['String']['input'];
+  status: CommunicationStatus;
   title: Scalars['String']['input'];
-  type: Scalars['String']['input'];
+  type: CommunicationType;
 };
 
 export type CommunicationListRelationFilter = {
@@ -1350,6 +1362,13 @@ export type CommunicationListRelationFilter = {
 export type CommunicationOrderByRelationAggregateInput = {
   _count?: InputMaybe<SortOrder>;
 };
+
+export enum CommunicationPriority {
+  Critical = 'CRITICAL',
+  High = 'HIGH',
+  Low = 'LOW',
+  Medium = 'MEDIUM'
+}
 
 export type CommunicationRecipient = {
   __typename?: 'CommunicationRecipient';
@@ -1395,6 +1414,20 @@ export type CommunicationScalarRelationFilter = {
   is?: InputMaybe<CommunicationWhereInput>;
   isNot?: InputMaybe<CommunicationWhereInput>;
 };
+
+export enum CommunicationStatus {
+  Draft = 'DRAFT',
+  Failed = 'FAILED',
+  Scheduled = 'SCHEDULED',
+  Sent = 'SENT'
+}
+
+export enum CommunicationType {
+  Email = 'EMAIL',
+  InAppMessage = 'IN_APP_MESSAGE',
+  PushNotification = 'PUSH_NOTIFICATION',
+  Sms = 'SMS'
+}
 
 export type CommunicationUpdateDto = {
   author_id?: InputMaybe<Scalars['String']['input']>;
@@ -1615,6 +1648,23 @@ export type CreateWithoutDocumentSubsidyRequestDto = {
   project_id: Scalars['String']['input'];
   requester_id: Scalars['String']['input'];
   total_budget: Scalars['Float']['input'];
+};
+
+export type DashboardKpIs = {
+  __typename?: 'DashboardKPIs';
+  activeChurches?: Maybe<Scalars['Int']['output']>;
+  churchDepartments?: Maybe<Scalars['Int']['output']>;
+  institutionDepartments?: Maybe<Scalars['Int']['output']>;
+  newProjectsThisYear?: Maybe<Scalars['Int']['output']>;
+  newUsersThisYear?: Maybe<Scalars['Int']['output']>;
+  previousYearProjects?: Maybe<Scalars['Int']['output']>;
+  previousYearUsers?: Maybe<Scalars['Int']['output']>;
+  projectGrowthRate?: Maybe<Scalars['Float']['output']>;
+  totalDepartments?: Maybe<Scalars['Int']['output']>;
+  totalProjects?: Maybe<Scalars['Int']['output']>;
+  totalRegions?: Maybe<Scalars['Int']['output']>;
+  totalUsers?: Maybe<Scalars['Int']['output']>;
+  userGrowthRate?: Maybe<Scalars['Float']['output']>;
 };
 
 export type DateTimeFilter = {
@@ -1917,7 +1967,7 @@ export type DirectMessageCreateDto = {
   institution_id: Scalars['String']['input'];
   recipient_id: Scalars['String']['input'];
   sender_id: Scalars['String']['input'];
-  status: Scalars['String']['input'];
+  status: EventRegistrationStatus;
   title: Scalars['String']['input'];
 };
 
@@ -2663,6 +2713,7 @@ export type InstitutionChartsData = {
   __typename?: 'InstitutionChartsData';
   churchesByRegion: Array<ChurchesByRegionData>;
   monthlyUserGrowth?: Maybe<Scalars['Float']['output']>;
+  monthlyUserRegistrations: Array<MonthlyUserRegistration>;
   usersByRole: Array<UsersByRoleData>;
 };
 
@@ -3025,6 +3076,13 @@ export type MonthlyCloseResult = {
   locked: Scalars['Float']['output'];
 };
 
+export type MonthlyUserRegistration = {
+  __typename?: 'MonthlyUserRegistration';
+  count: Scalars['Int']['output'];
+  month: Scalars['String']['output'];
+};
+
+
 export type Mutation = {
   __typename?: 'Mutation';
   addAdjustmentTask: AdjustmentTask;
@@ -3087,6 +3145,7 @@ export type Mutation = {
   inviteUser: InviteModel;
   linkContact: LinkContactResult;
   login: AuthModel;
+  logout: Scalars['Boolean']['output'];
   markAllNotificationsRead: MarkAllReadResult;
   markNotificationRead: Notification;
   recalculateInstitutionAllocatedAmounts: RecalculateAllocatedAmountsResponse;
@@ -5215,6 +5274,8 @@ export type Query = {
   annualBudget?: Maybe<AnnualBudget>;
   annualBudgets: Array<AnnualBudget>;
   assignmentInviteTemplates: Array<AssignmentInviteTemplate>;
+  availableYears: Array<Scalars['Int']['output']>;
+
   budgetDistribution: BudgetDistribution;
   budgetKPIs: BudgetKpIs;
   checkEmailAvailability: EmailVerificationResponse;
@@ -5226,6 +5287,7 @@ export type Query = {
   communications: Array<Communication>;
   contact?: Maybe<Contact>;
   contacts: Array<Contact>;
+  dashboardKPIs: DashboardKpIs;
   department?: Maybe<Department>;
   departmentActivityData: Array<DepartmentActivityData>;
   departmentBudgetTimeline: Array<DepartmentBudgetTimeline>;
@@ -5313,6 +5375,12 @@ export type QueryAnnualBudgetsArgs = {
 };
 
 
+export type QueryAvailableYearsArgs = {
+  entities: Array<AvailableYearsEntity>;
+  institution_id?: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type QueryBudgetDistributionArgs = {
   institutionId: Scalars['String']['input'];
   year: Scalars['Int']['input'];
@@ -5359,6 +5427,13 @@ export type QueryCommunicationArgs = {
 
 export type QueryContactArgs = {
   id: Scalars['String']['input'];
+};
+
+
+export type QueryDashboardKpIsArgs = {
+  institutionId: Scalars['String']['input'];
+  month?: InputMaybe<Scalars['Int']['input']>;
+  year: Scalars['Int']['input'];
 };
 
 
@@ -5549,6 +5624,7 @@ export type QueryProjectHistoriesArgs = {
 
 export type QueryProjectKpIsArgs = {
   institutionId?: InputMaybe<Scalars['String']['input']>;
+  year?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -6867,7 +6943,7 @@ export type UserModel = {
   institution?: Maybe<Institution>;
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
-  language_preference: Scalars['String']['output'];
+  language_preference: LanguagePreference;
   name: Scalars['String']['output'];
   password?: Maybe<Scalars['String']['output']>;
   recieve_emails: Scalars['Boolean']['output'];
@@ -7068,7 +7144,7 @@ export type UserWithRoles = {
   institution?: Maybe<Institution>;
   institution_id: Scalars['String']['output'];
   is_deleted: Scalars['Boolean']['output'];
-  language_preference: Scalars['String']['output'];
+  language_preference: LanguagePreference;
   name: Scalars['String']['output'];
   password?: Maybe<Scalars['String']['output']>;
   recieve_emails: Scalars['Boolean']['output'];

@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { StepTitle } from "./step-title"
 import { StepFieldsContainer } from "./step-fields-container"
 import { StepProgress } from "./step-progress"
 import { StepButtons } from "./step-buttons"

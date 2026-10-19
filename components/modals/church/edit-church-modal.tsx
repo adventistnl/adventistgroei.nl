@@ -15,7 +15,6 @@ import {
   Mail,
   ChevronLeft,
   ChevronRight,
-  Users,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useChurches } from "@/hooks/use-churches"
@@ -23,8 +22,6 @@ import { useRegions } from "@/hooks/use-regions"
 import { useInstitution } from "@/contexts/institution-context"
 import { UpdateChurch, UpdateChurchVariables } from "@/types/UpdateChurch"
 import { ChurchTypeSelector } from "./church-type-selector"
-import { RegionSelector } from "./region-selector"
-import { ProvinceAndCitySelector } from "./province-and-city-selector"
 import { LeaderSelector } from "./leader-selector"
 import { ZipCodeInput } from "@/components/shared/zip-code-input"
 import { Church, ChurchType } from "@/types/graphql-global-types"

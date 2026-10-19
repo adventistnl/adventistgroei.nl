@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   Loader2,
   MessageCircle,
-  AlertCircle,
   Trash2,
   Send,
   Bot,

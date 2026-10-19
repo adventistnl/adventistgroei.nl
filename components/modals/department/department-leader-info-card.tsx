@@ -10,7 +10,6 @@ import {
   User,
   Mail,
   Phone,
-  Building,
   Crown
 } from "lucide-react"
 import {

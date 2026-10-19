@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { useTranslation } from "react-i18next"
-import { AdventistLogo } from "@/components/ui/adventist-logo"
 import { loginTranslations } from "@/lib/translations/login"
 import { AppLoader } from "@/components/shared/app-loader"
 

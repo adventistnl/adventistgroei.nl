@@ -5,34 +5,23 @@ import { useMutation, useQuery } from "@apollo/client"
 import { useTranslation } from "react-i18next"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "@/components/ui/status-badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   CheckCircle,
   CheckCircle2,
   Clock,
   XCircle,
   AlertCircle,
-  Plus,
   MoreHorizontal,
-  Edit,
-  Trash2,
   DollarSign,
-  RefreshCw,
   Eye,
   FileText,
   LayoutGrid,
   List,
-  Building,
-  User,
-  Calendar,
   TrendingUp,
   Settings,
-  Info,
   Flag,
-  Maximize2,
   X,
   Fullscreen,
   ArrowUpCircle,
@@ -75,25 +64,10 @@ import {
 } from "@/components/finance/charts"
 
 // Charts
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  Legend,
-  ResponsiveContainer
-} from "recharts"
+
+
+
+
 import { APPROVE_SUBSIDY_REQUEST, REJECT_SUBSIDY_REQUEST, UPDATE_SUBSIDY_REQUEST } from "@/graphql/mutations/SUBSIDY_REQUEST_MUTATIONS"
 import { GET_ALL_SUBSIDY_STATUSES } from "@/graphql/queries/SUBSIDY_STATUS_QUERIES"
 import { InlinePrivacyToggle, PrivacyWrapper } from "@/components/shared/privacy-wrapper"
@@ -308,6 +282,44 @@ export function SubsidyRequestManager({
   // Fetch all subsidy statuses for ID resolution
   const { data: statusesData } = useQuery(GET_ALL_SUBSIDY_STATUSES)
 
+  // Helper to extract user-friendly error message from GraphQL/Network errors
+  const getSubsidyErrorMessage = (err: any, fallbackTemplate: string): string => {
+    let ext = (err.graphQLErrors?.[0]?.extensions as any);
+    let apiMsg = err.graphQLErrors?.[0]?.message;
+    if (!ext && (err.networkError as any)?.result?.errors?.[0]?.extensions) {
+      ext = (err.networkError as any).result.errors[0].extensions;
+    }
+    if (!apiMsg && (err.networkError as any)?.result?.errors?.[0]?.message) {
+      apiMsg = (err.networkError as any).result.errors[0].message;
+    }
+    const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+
+    if (errorCode === 'DOCUMENTS_REJECTED') {
+      return translations.toasts?.documentsRejected || "Cannot approve subsidy with rejected documents";
+    }
+    if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
+      return translations.toasts?.documentsPending || "All documents must be validated first";
+    }
+    if (errorCode === 'STATUS_IS_CLOSED') {
+      return translations.toasts?.statusClosed || "Status Closed cannot be changed";
+    }
+    if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
+      return translations.toasts?.inReviewToClosed || "Cannot close In Review requests";
+    }
+    if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
+      return translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close";
+    }
+    if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
+      return translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests";
+    }
+    if (errorCode === 'FINANCIAL_CANNOT_ACT_BEFORE_APPROVAL') {
+      return translations.toasts?.onlyFinancialCanManage || "Only Finance users can manage subsidies after approval";
+    }
+
+    const displayMsg = apiMsg && !apiMsg.includes('Received status code') ? apiMsg : err.message;
+    return fallbackTemplate.replace('{{message}}', displayMsg);
+  };
+
   // Mutations for approve/reject
   const [approveSubsidyMutation] = useMutation(APPROVE_SUBSIDY_REQUEST, {
     onCompleted: async () => {
@@ -317,24 +329,7 @@ export function SubsidyRequestManager({
       }
     },
     onError: (err) => {
-      let ext = (err.graphQLErrors?.[0]?.extensions as any);
-      if (!ext && (err.networkError as any)?.result?.errors?.[0]?.extensions) {
-        ext = (err.networkError as any).result.errors[0].extensions;
-      }
-      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
-      if (errorCode === 'STATUS_IS_CLOSED') {
-        toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
-      } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-        toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
-      } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-        toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
-      } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-        toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
-      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
-        toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
-      } else {
-        toast.error(translations.toasts.approveError.replace('{{message}}', err.message))
-      }
+      toast.error(getSubsidyErrorMessage(err, translations.toasts.approveError))
     }
   })
 
@@ -346,24 +341,7 @@ export function SubsidyRequestManager({
       }
     },
     onError: (err) => {
-      let ext = (err.graphQLErrors?.[0]?.extensions as any);
-      if (!ext && (err.networkError as any)?.result?.errors?.[0]?.extensions) {
-        ext = (err.networkError as any).result.errors[0].extensions;
-      }
-      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
-      if (errorCode === 'STATUS_IS_CLOSED') {
-        toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
-      } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-        toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
-      } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-        toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
-      } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-        toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
-      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
-        toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
-      } else {
-        toast.error(translations.toasts.rejectError.replace('{{message}}', err.message))
-      }
+      toast.error(getSubsidyErrorMessage(err, translations.toasts.rejectError))
     }
   })
 
@@ -375,24 +353,7 @@ export function SubsidyRequestManager({
       }
     },
     onError: (err) => {
-      let ext = (err.graphQLErrors?.[0]?.extensions as any);
-      if (!ext && (err.networkError as any)?.result?.errors?.[0]?.extensions) {
-        ext = (err.networkError as any).result.errors[0].extensions;
-      }
-      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
-      if (errorCode === 'STATUS_IS_CLOSED') {
-        toast.error(translations.toasts?.statusClosed || "Status Closed cannot be changed");
-      } else if (errorCode === 'INVALID_TRANSITION_IN_REVIEW_TO_CLOSED') {
-        toast.error(translations.toasts?.inReviewToClosed || "Cannot close In Review requests");
-      } else if (errorCode === 'INVALID_TRANSITION_FINAL_STATE') {
-        toast.error(translations.toasts?.mustBeFinal || "Must be Approved or Rejected to Close");
-      } else if (errorCode === 'DOCUMENTS_NOT_VALIDATED') {
-        toast.error(translations.toasts?.documentsPending || "All documents must be validated first");
-      } else if (errorCode === 'ONLY_FINANCIAL_CAN_CLOSE') {
-        toast.error(translations.toasts?.onlyFinancialCanClose || "Only users with the Financial Manager role can close subsidy requests");
-      } else {
-        toast.error(translations.toasts.statusUpdateError.replace('{{message}}', err.message))
-      }
+      toast.error(getSubsidyErrorMessage(err, translations.toasts.statusUpdateError))
     }
   })
 

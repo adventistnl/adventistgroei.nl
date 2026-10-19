@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useTranslation } from "react-i18next"
-import { GlobalSearch, SearchTrigger, useGlobalSearch } from "@/components/global-search"
+import { SearchTrigger, useGlobalSearch } from "@/components/global-search"
 import { LanguageSelector } from "@/components/shared/language-selector"
 import { CurrencySelector } from "@/components/shared/currency-selector"
 import { ThemeSwitcher } from "@/components/theme-switcher"

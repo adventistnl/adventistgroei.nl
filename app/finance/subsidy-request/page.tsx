@@ -10,10 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { 
-  CheckCircle, 
   RefreshCw,
   Building,
-  DollarSign,
   ShieldAlert
 } from "lucide-react"
 import toast from "react-hot-toast"
@@ -25,7 +23,6 @@ import { SubsidyRequestManager } from "@/components/finance/subsidy-request-mana
 import { GlobalPrivacyToggle } from "@/components/shared/global-privacy-toggle"
 import { useInstitution } from "@/contexts/institution-context"
 import { WithPermission } from "@/hocs/with-permission"
-import { AccessDenied } from "@/components/access/access-denied"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import { GET_ALL_SUBSIDY_REQUESTS } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
 import { GET_SUBSIDY_ANALYTICS } from "@/graphql/queries/SUBSIDY_ANALYTICS_QUERIES"

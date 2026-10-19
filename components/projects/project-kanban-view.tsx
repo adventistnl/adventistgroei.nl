@@ -26,7 +26,7 @@ import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { CREATE_PROJECT_HISTORY } from "@/graphql/mutations/PROJECT_HISTORY_MUTATIONS"
 import { CREATE_ADJUSTMENT } from "@/graphql/mutations/PROJECT_ADJUSTMENT_MUTATIONS"
 import { BATCH_UPDATE_PROJECT_ACTIVITIES } from "@/graphql/mutations/PROJECT_ACTIVITY_MUTATIONS"
-import { buildStatusChangedPayload, buildCommentPayload } from "@/hooks/graphql/use-project-history"
+import { buildCommentPayload } from "@/hooks/graphql/use-project-history"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY, GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { REQUEST_SUBSIDY_REFUND } from "@/graphql/mutations/REFUND_MUTATIONS"
 import { SubsidyRequestOption } from "@/components/modals/project/kanban-status-transition-modal"
@@ -41,7 +41,7 @@ import { useCurrency } from "@/contexts/currency-context"
 import { useAuth } from "@/contexts/auth-context"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { SpecialProjectBadge, getSpecialProjectColors } from "./special-project-badge"
-import { createProjectKanbanMoveRules, getProjectInvalidGroups, getProjectBlockedRule } from "@/lib/project-kanban-rules"
+import { createProjectKanbanMoveRules, getProjectBlockedRule } from "@/lib/project-kanban-rules"
 import {
   KanbanStatusTransitionModal,
   requiresTransitionConfirmation,

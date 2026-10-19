@@ -8,13 +8,28 @@ import {
   APPROVE_ANNUAL_BUDGET_MUTATION,
   REJECT_ANNUAL_BUDGET_MUTATION,
   REQUEST_REVISION_ANNUAL_BUDGET_MUTATION,
-  TOGGLE_BUDGET_LOCK_MUTATION
+  TOGGLE_BUDGET_LOCK_MUTATION,
 } from "@/graphql/mutations/ANNUAL_BUDGET_MUTATIONS";
-import { DeleteAnnualBudget, DeleteAnnualBudgetVariables } from "@/types/DeleteAnnualBudget";
-import { ApproveAnnualBudget, ApproveAnnualBudgetVariables } from "@/types/ApproveAnnualBudget";
-import { RejectAnnualBudget, RejectAnnualBudgetVariables } from "@/types/RejectAnnualBudget";
-import { RequestRevisionAnnualBudget, RequestRevisionAnnualBudgetVariables } from "@/types/RequestRevisionAnnualBudget";
-import { ToggleBudgetLock, ToggleBudgetLockVariables } from "@/types/ToggleBudgetLock";
+import {
+  DeleteAnnualBudget,
+  DeleteAnnualBudgetVariables,
+} from "@/types/DeleteAnnualBudget";
+import {
+  ApproveAnnualBudget,
+  ApproveAnnualBudgetVariables,
+} from "@/types/ApproveAnnualBudget";
+import {
+  RejectAnnualBudget,
+  RejectAnnualBudgetVariables,
+} from "@/types/RejectAnnualBudget";
+import {
+  RequestRevisionAnnualBudget,
+  RequestRevisionAnnualBudgetVariables,
+} from "@/types/RequestRevisionAnnualBudget";
+import {
+  ToggleBudgetLock,
+  ToggleBudgetLockVariables,
+} from "@/types/ToggleBudgetLock";
 
 // INSTITUTION BUDGET HOOKS
 export function useCreateInstitutionBudgetMutation(options?: any) {
@@ -35,21 +50,36 @@ export function useUpdateDepartmentBudgetMutation(options?: any) {
 }
 
 export function useDeleteAnnualBudgetMutation(options?: any) {
-  return useMutation<DeleteAnnualBudget, DeleteAnnualBudgetVariables>(DELETE_ANNUAL_BUDGET_MUTATION, options);
+  return useMutation<DeleteAnnualBudget, DeleteAnnualBudgetVariables>(
+    DELETE_ANNUAL_BUDGET_MUTATION,
+    options,
+  );
 }
 
 export function useApproveAnnualBudgetMutation(options?: any) {
-  return useMutation<ApproveAnnualBudget, ApproveAnnualBudgetVariables>(APPROVE_ANNUAL_BUDGET_MUTATION, options);
+  return useMutation<ApproveAnnualBudget, ApproveAnnualBudgetVariables>(
+    APPROVE_ANNUAL_BUDGET_MUTATION,
+    options,
+  );
 }
 
 export function useRejectAnnualBudgetMutation(options?: any) {
-  return useMutation<RejectAnnualBudget, RejectAnnualBudgetVariables>(REJECT_ANNUAL_BUDGET_MUTATION, options);
+  return useMutation<RejectAnnualBudget, RejectAnnualBudgetVariables>(
+    REJECT_ANNUAL_BUDGET_MUTATION,
+    options,
+  );
 }
 
 export function useRequestRevisionAnnualBudgetMutation(options?: any) {
-  return useMutation<RequestRevisionAnnualBudget, RequestRevisionAnnualBudgetVariables>(REQUEST_REVISION_ANNUAL_BUDGET_MUTATION, options);
+  return useMutation<
+    RequestRevisionAnnualBudget,
+    RequestRevisionAnnualBudgetVariables
+  >(REQUEST_REVISION_ANNUAL_BUDGET_MUTATION, options);
 }
 
 export function useToggleBudgetLockMutation(options?: any) {
-  return useMutation<ToggleBudgetLock, ToggleBudgetLockVariables>(TOGGLE_BUDGET_LOCK_MUTATION, options);
+  return useMutation<ToggleBudgetLock, ToggleBudgetLockVariables>(
+    TOGGLE_BUDGET_LOCK_MUTATION,
+    options,
+  );
 }

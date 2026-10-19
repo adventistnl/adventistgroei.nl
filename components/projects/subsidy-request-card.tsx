@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreVertical, FileText, DollarSign, Archive, Info, Eye, Pencil, Trash2, Plus, AlertCircle, CheckCircle2 } from "lucide-react"
+import { MoreVertical, FileText, DollarSign, Archive, Eye, Pencil, Trash2, Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {

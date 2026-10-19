@@ -1,4 +1,5 @@
-import { useQuery } from "@apollo/client/react";
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query";
+import { PermissionResolverName } from "@/types/graphql-global-types";
 import { GET_INSTITUTIONS_FOR_INVITE_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY";
 
 export interface DepartmentForInvite {
@@ -24,7 +25,11 @@ export interface InstitutionsForInviteResult {
 }
 
 export function useGetInstitutionsForInviteQuery() {
-  return useQuery<InstitutionsForInviteResult>(GET_INSTITUTIONS_FOR_INVITE_QUERY, {
-    fetchPolicy: "cache-and-network",
-  });
+  return useProtectedQuery<InstitutionsForInviteResult>(
+    GET_INSTITUTIONS_FOR_INVITE_QUERY,
+    [PermissionResolverName.Institutions],
+    {
+      fetchPolicy: "cache-and-network",
+    },
+  );
 }

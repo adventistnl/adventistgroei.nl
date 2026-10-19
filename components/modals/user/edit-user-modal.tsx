@@ -45,7 +45,6 @@ import { useLanguageOptions } from '@/hooks/use-language-preferences';
 import { useInstitution } from "@/contexts/institution-context"
 import { LanguageSelectorInput } from "@/components/shared/language-selector-input"
 import { FilterTags, FilterTag } from "@/components/shared/filter-tags"
-import { RoleSelector } from "@/components/shared/role-selector"
 
 export interface EditUserModalProps {
   isOpen: boolean

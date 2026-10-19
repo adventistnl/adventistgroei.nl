@@ -17,7 +17,7 @@ const nextConfig = {
   poweredByHeader: false,
 
   experimental: {
-    // Removido optimizePackageImports para corrigir erro de chunking do lucide-react
+    optimizePackageImports: ["lucide-react", "recharts", "date-fns", "@radix-ui/react-icons"],
   },
 
   webpack: (config, { isServer }) => {

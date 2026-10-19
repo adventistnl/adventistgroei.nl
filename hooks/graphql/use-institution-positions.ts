@@ -1,4 +1,6 @@
 import { useMutation, useQuery } from "@apollo/client/react";
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query";
+import { PermissionResolverName } from "@/types/graphql-global-types";
 import {
   GET_INSTITUTION_POSITIONS_QUERY,
   GET_INSTITUTION_POSITION_QUERY,
@@ -31,66 +33,89 @@ import {
 
 export function useGetInstitutionPositionsQuery(
   variables: GetInstitutionPositionsVariables,
-  options?: Omit<useQuery.Options<GetInstitutionPositions, GetInstitutionPositionsVariables>, "variables">
+  options?: Omit<
+    useQuery.Options<GetInstitutionPositions, GetInstitutionPositionsVariables>,
+    "variables"
+  >,
 ) {
-  return useQuery<GetInstitutionPositions, GetInstitutionPositionsVariables>(
+  return useProtectedQuery<
+    GetInstitutionPositions,
+    GetInstitutionPositionsVariables
+  >(
     GET_INSTITUTION_POSITIONS_QUERY,
+    [PermissionResolverName.InstitutionPositions],
     {
       variables,
       skip: !variables.institution_id,
       fetchPolicy: "cache-and-network",
-      ...options,
-    }
+      ...(options as any),
+    },
   );
 }
 
 export function useGetInstitutionPositionQuery(
   variables: GetInstitutionPositionVariables,
-  options?: Omit<useQuery.Options<GetInstitutionPosition, GetInstitutionPositionVariables>, "variables">
+  options?: Omit<
+    useQuery.Options<GetInstitutionPosition, GetInstitutionPositionVariables>,
+    "variables"
+  >,
 ) {
-  return useQuery<GetInstitutionPosition, GetInstitutionPositionVariables>(
+  return useProtectedQuery<
+    GetInstitutionPosition,
+    GetInstitutionPositionVariables
+  >(
     GET_INSTITUTION_POSITION_QUERY,
+    [PermissionResolverName.InstitutionPositions],
     {
       variables,
       skip: !variables.id,
       fetchPolicy: "cache-and-network",
-      ...options,
-    }
+      ...(options as any),
+    },
   );
 }
 
 export function useCreateInstitutionPositionMutation(
-  options?: useMutation.Options<CreateInstitutionPosition, CreateInstitutionPositionVariables>
+  options?: useMutation.Options<
+    CreateInstitutionPosition,
+    CreateInstitutionPositionVariables
+  >,
 ) {
-  return useMutation<CreateInstitutionPosition, CreateInstitutionPositionVariables>(
-    CREATE_INSTITUTION_POSITION_MUTATION,
-    {
-      refetchQueries: ["GetInstitutionPositions"],
-      ...options,
-    }
-  );
+  return useMutation<
+    CreateInstitutionPosition,
+    CreateInstitutionPositionVariables
+  >(CREATE_INSTITUTION_POSITION_MUTATION, {
+    refetchQueries: ["GetInstitutionPositions"],
+    ...options,
+  });
 }
 
 export function useUpdateInstitutionPositionMutation(
-  options?: useMutation.Options<UpdateInstitutionPosition, UpdateInstitutionPositionVariables>
+  options?: useMutation.Options<
+    UpdateInstitutionPosition,
+    UpdateInstitutionPositionVariables
+  >,
 ) {
-  return useMutation<UpdateInstitutionPosition, UpdateInstitutionPositionVariables>(
-    UPDATE_INSTITUTION_POSITION_MUTATION,
-    {
-      refetchQueries: ["GetInstitutionPositions"],
-      ...options,
-    }
-  );
+  return useMutation<
+    UpdateInstitutionPosition,
+    UpdateInstitutionPositionVariables
+  >(UPDATE_INSTITUTION_POSITION_MUTATION, {
+    refetchQueries: ["GetInstitutionPositions"],
+    ...options,
+  });
 }
 
 export function useDeleteInstitutionPositionMutation(
-  options?: useMutation.Options<DeleteInstitutionPosition, DeleteInstitutionPositionVariables>
+  options?: useMutation.Options<
+    DeleteInstitutionPosition,
+    DeleteInstitutionPositionVariables
+  >,
 ) {
-  return useMutation<DeleteInstitutionPosition, DeleteInstitutionPositionVariables>(
-    DELETE_INSTITUTION_POSITION_MUTATION,
-    {
-      refetchQueries: ["GetInstitutionPositions"],
-      ...options,
-    }
-  );
+  return useMutation<
+    DeleteInstitutionPosition,
+    DeleteInstitutionPositionVariables
+  >(DELETE_INSTITUTION_POSITION_MUTATION, {
+    refetchQueries: ["GetInstitutionPositions"],
+    ...options,
+  });
 }

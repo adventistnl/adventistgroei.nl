@@ -5,7 +5,7 @@ import { X, Check, Shield } from "lucide-react"
 import { FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Control } from "react-hook-form"
 import { cn } from "@/lib/utils"
-import { Roles, Roles_roles } from "@/types/Roles"
+import { Roles_roles } from "@/types/Roles"
 import { CardsCarousel, CardData } from "@/components/shared/cards-carousel"
 
 interface RoleSelectorProps {

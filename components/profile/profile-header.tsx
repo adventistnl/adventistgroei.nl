@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { BadgeCheck } from "lucide-react"
 

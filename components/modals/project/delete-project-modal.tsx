@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronRight,
-  FolderKanban,
   Database,
   Layers,
   Lock,

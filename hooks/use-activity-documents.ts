@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from '@apollo/client'
+import { useMutation } from '@apollo/client'
+import { useProtectedQuery } from '@/hooks/graphql/use-protected-query'
+import { PermissionResolverName } from '@/types/graphql-global-types'
 import {
   DELETE_ACTIVITY_DOCUMENT,
   VALIDATE_ACTIVITY_DOCUMENT,
@@ -40,10 +42,14 @@ export function useActivityDocuments({ activityId, projectActivityId }: UseActiv
   const { getCookies } = useCookies()
 
   // Query to fetch existing documents
-  const { data, loading, refetch } = useQuery(GET_ACTIVITY_DOCUMENTS, {
-    variables: { activityId: projectActivityId },
-    skip: !projectActivityId,
-  })
+  const { data, loading, refetch } = useProtectedQuery(
+    GET_ACTIVITY_DOCUMENTS,
+    [PermissionResolverName.GetActivityDocuments],
+    {
+      variables: { activityId: projectActivityId },
+      skip: !projectActivityId,
+    }
+  )
 
   // Mutations
   const [deleteDocumentMutation, { loading: deleting }] = useMutation(DELETE_ACTIVITY_DOCUMENT)
@@ -114,6 +120,7 @@ export function useActivityDocuments({ activityId, projectActivityId }: UseActiv
       // Call REST endpoint
       const response = await fetch(`${apiUrl}/activity-documents/upload`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
         },
@@ -224,6 +231,7 @@ export function useActivityDocuments({ activityId, projectActivityId }: UseActiv
       // Call REST endpoint for download
       const response = await fetch(`${apiUrl}/activity-documents/${documentId}/download`, {
         method: 'GET',
+        credentials: 'include',
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
         },

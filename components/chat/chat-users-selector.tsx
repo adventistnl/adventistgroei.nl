@@ -12,8 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { 
   MessageCircle, 
   Search, 
-  Users, 
-  X,
+  Users,
   Send
 } from "lucide-react"
 import { mockUsers } from "@/data/mockData"

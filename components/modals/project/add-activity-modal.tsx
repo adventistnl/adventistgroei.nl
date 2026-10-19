@@ -3,9 +3,7 @@
 import * as React from "react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { 
-  Activity,
-  DollarSign,
+import {
   Plus
 } from "lucide-react"
 

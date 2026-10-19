@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, type LucideIcon } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 import { useNavigateWithLoading } from "@/hooks/use-navigation-loading"
 import { useTranslation } from "react-i18next"
 import { structureTranslations } from "@/lib/translations/structure"
@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/sidebar"
 
 import * as React from "react"
-import { it } from "node:test"
 import { NavItem, NavSection } from "@/config/navigation"
 
 interface NavMainProps {

@@ -20,8 +20,6 @@ import {
   Clock,
   FileText,
   Download,
-  Calendar,
-  DollarSign,
   FileIcon
 } from "lucide-react"
 import toast from "react-hot-toast"

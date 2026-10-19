@@ -1,19 +1,10 @@
 "use client"
 
 import { useMemo } from "react"
-import { DollarSign, Building2 } from "lucide-react"
-import { useCurrency } from "@/contexts/currency-context"
+import { DollarSign } from "lucide-react"
 import { useInstitution } from "@/contexts/institution-context"
 import { useAnnualBudgetKPIs } from "@/hooks/graphql/use-annual-budget-queries"
-import { BudgetOverviewCard } from "./budget-overview-card"
-import { BudgetMetricsCard } from "./budget-metrics-card"
-import { DepartmentAllocationList } from "./department-allocation-list"
 import { SpendingOverTimeChart } from "@/components/charts/annual-budget/spending-over-time-chart"
-import { useQuery } from "@apollo/client"
-import { GET_ALL_SUBSIDY_REQUESTS } from "@/graphql/queries/SUBSIDY_REQUESTS_QUERY"
-import { GET_SUBSIDY_STATUS_HISTORY } from "@/graphql/queries/SUBSIDY_STATUS_HISTORY_QUERIES"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
 
 interface BudgetSectionProps {
   selectedYear: number
@@ -32,13 +23,13 @@ export function BudgetSection({
   const departmentBudgetData = useMemo(() => {
     const institution = currentInstitutionData
     if (!institution?.departments) return []
-    
+
     return institution.departments.map((department: any) => {
       // Find annual budget for selected year
       const annualBudget = department.annual_budgets?.find(
         (budget: any) => budget.year === selectedYear
       )
-      
+
       return {
         id: department.id,
         departmentId: department.id,
@@ -56,12 +47,15 @@ export function BudgetSection({
     })
   }, [currentInstitutionData, selectedYear])
 
+  const institutionId = currentInstitutionData?.id
+  const year = selectedYear
+
   // Dados reais consolidados através dos dados transacionais do Ledger fornecidos pelo backend!
-  const { data: annualKpiData } = useAnnualBudgetKPIs(
-    currentInstitutionData?.id 
-      ? { variables: { year: selectedYear, institutionId: currentInstitutionData.id }, fetchPolicy: "network-only" }
-      : { skip: true }
-  )
+  const { data: annualKpiData } = useAnnualBudgetKPIs({
+    variables: { year, institutionId: institutionId! },
+    fetchPolicy: "network-only",
+    skip: !institutionId
+  })
 
   const spendingOverTimeData = annualKpiData?.spendingOverTime || []
 
@@ -83,14 +77,14 @@ export function BudgetSection({
           </p>
         </div>
       </div>
-      
+
       <div className="space-y-6">
         {/* First Row: Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
 
-          
+
         </div>
-        
+
         {/* Second Row: Spending Over Time Chart */}
         {spendingOverTimeData.length > 0 && (
           <div className="w-full">

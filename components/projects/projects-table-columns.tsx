@@ -11,18 +11,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {
   Activity,
-  Calendar,
   Edit,
   Eye,
   Folder,
   MoreHorizontal,
   Trash2,
-  Users,
 } from "lucide-react"
 import { ProjectTableData } from "@/components/projects/projects-table"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { format, differenceInDays } from "date-fns"
-import { ptBR } from "date-fns/locale"
 
 export const createProjectColumns = (
   departments: any[],

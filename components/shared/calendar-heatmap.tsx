@@ -2,17 +2,14 @@
 
 import * as React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { ChevronLeft, ChevronRight, Activity } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { format, startOfYear, endOfYear, eachDayOfInterval, isBefore, isSameDay, startOfMonth, endOfMonth, addMonths, subMonths, getDay } from "date-fns"
+import { format, startOfYear, endOfYear, eachDayOfInterval, isBefore, isSameDay, addMonths, subMonths, getDay } from "date-fns"
 import { ptBR, nl, enUS } from "date-fns/locale"
 
 /**

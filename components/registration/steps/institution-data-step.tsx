@@ -7,11 +7,9 @@ import {
   FormDescription,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form"
 import { DepartmentSelect, ChurchSelect } from "../carousel-select"
-import { Church, Department } from "@/types/graphql-global-types"
 import { Churches_churches } from "@/types/Churches"
 import { Departments_departments } from "@/types/Departments"
 

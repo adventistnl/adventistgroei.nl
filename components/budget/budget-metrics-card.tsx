@@ -30,13 +30,12 @@ export function BudgetMetricsCard({
 
   // GraphQL Hook para dados reais
   const { data: kpisData, loading: budgetKpisLoading } = useAnnualBudgetKPIs({
+    variables: { 
+      year: typeof year === 'number' ? year : parseInt(String(year)),
+      institutionId: institutionId!
+    },
     skip: !institutionId,
-    variables: {
-      institutionId: institutionId!,
-      year: year
-    }
   })
-
   // Processar dados do orçamento
   const budgetData = useMemo(() => {
     if (!kpisData?.budgetKPIs) {

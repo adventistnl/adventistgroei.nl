@@ -1,31 +1,24 @@
 import { useMemo } from "react";
-import { useCookies } from "./use-cookies";
+
 import { useGetUserQuery } from "./graphql/use-get-user-query";
 import { useCreateUserMutation, useUpdateUserMutation, useAddRoleToUserMutation, useDeleteUserMutation, useRemoveRoleFromUserMutation } from "./graphql/use-user-mutation";
 import { LanguagePreference } from "@/types/globalTypes";
 import { UpdateUserVariables } from "@/types/UpdateUser";
 
-function decodeJWT(token: string): any {
-  try {
-    const payload = token.split(".")[1];
-    const decoded = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
-    return decoded;
-  } catch (e) {
-    return null;
-  }
-}
-
 export function useUser({token, id}:{token?: string, id?: string}) {
-  const { getCookies } = useCookies()
 
-  const cookies = getCookies();
-
-  const jwt = token || cookies['auth-token'];
   const loggedUserId = useMemo(() => {
-    if (!jwt) return null;
-    const decoded = decodeJWT(jwt);
-    return decoded?.sub || null;
-  }, [jwt]);
+    try {
+      const storedUser = localStorage.getItem('auth-user');
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        return parsedUser?.id || null;
+      }
+    } catch (e) {
+      // ignore parse error
+    }
+    return null;
+  }, []);
 
   const { data, error, loading, refetch } = useGetUserQuery({ id: id ? id : loggedUserId },);
 

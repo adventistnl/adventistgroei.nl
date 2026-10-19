@@ -7,10 +7,8 @@ import { ChartHeader } from "@/components/charts/chart-header"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import {
   ChartConfig,
@@ -20,7 +18,6 @@ import {
 } from "@/components/ui/chart"
 import { ChartLegendContainer, ChartLegendItem } from "@/components/charts/chart-legend-item"
 import { Button } from "@/components/ui/button"
-import { DollarSign } from "lucide-react"
 import { useCurrency } from "@/contexts/currency-context"
 
 interface RequestsOverTimeChartProps {

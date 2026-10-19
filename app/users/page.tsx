@@ -1,4 +1,11 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
+
+import { useAvailableYears } from "@/hooks/use-available-years"
+import { AvailableYearsEntity } from "@/types/globalTypes"
+
 
 import React, { useState, Suspense } from "react"
 import { useTranslation } from "react-i18next"
@@ -35,7 +42,6 @@ import toast from "react-hot-toast"
 import "@/lib/i18n"
 
 // Hooks
-import { useUserKPI } from "@/hooks/KPI/use-users-kpi"
 import { useLanguageOptions } from '@/hooks/use-language-preferences'
 
 // Lazy load modals
@@ -46,6 +52,7 @@ const ContactViewEditModal = React.lazy(() => import("@/components/modals/contac
 
 // Components
 import { UseTable } from "@/components/ui/use-table"
+import { useProtectedQuery } from "@/hooks/graphql/use-protected-query"
 import { KPICards, type KPICardData } from "@/components/shared/kpi-cards-carousel"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { PageFilters, type FilterConfig } from "@/components/shared/page-filters"
@@ -56,8 +63,6 @@ import { useInstitution } from "@/contexts/institution-context"
 import { InstitutionById_institution_users as User } from "@/types/InstitutionById"
 import { useRoles } from "@/hooks/use-roles"
 import { AccessDenied } from "@/components/access/access-denied"
-import { UsersByStructureOverviewChart, UserStructureGrowthChart } from "@/components/charts/dashboard"
-import { useQuery } from "@apollo/client"
 import { GET_INSTITUTIONS_LIGHT_QUERY } from "@/graphql/queries/INSTITUTIONS_QUERY"
 import { GET_REGIONS_QUERY } from "@/graphql/queries/REGIONS_QUERY"
 import { GET_CHURCHES_QUERY } from "@/graphql/queries/CHURCH_QUERY"
@@ -65,6 +70,8 @@ import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
 import { GET_ALL_ROLES_QUERY } from "@/graphql/queries/GET_ROLES_QUERY"
 import { UsersPageSkeleton } from "@/components/shared/page-skeleton"
 import { YearFilter } from "@/components/shared/year-filter"
+
+const UserStructureGrowthChart = dynamic(() => import('@/components/charts/dashboard').then(mod => mod.UserStructureGrowthChart), { ssr: false });
 
 export default function UsersPage() {
   const { t } = useTranslation()
@@ -89,10 +96,7 @@ export default function UsersPage() {
   const [isDeleteUserOpen, setIsDeleteUserOpen] = useState(false)
   const [isViewContactOpen, setIsViewContactOpen] = useState(false)
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [availableYears, setAvailableYears] = useState<number[]>(() => {
-    const current = new Date().getFullYear()
-    return [current, current - 1, current - 2]
-  })
+  const { availableYears, setAvailableYears } = useAvailableYears([AvailableYearsEntity.USER])
   
   // Page filters state
   const [pageFilters, setPageFilters] = useState<Record<string, any>>({
@@ -153,13 +157,14 @@ export default function UsersPage() {
 
 
     // GraphQL Queries
-    const { data: institutionsData, loading: institutionsLoading, refetch: refetchInstitutions } = useQuery(GET_INSTITUTIONS_LIGHT_QUERY)
-    const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useQuery(GET_REGIONS_QUERY)
-    const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useQuery(GET_CHURCHES_QUERY)
-    const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useQuery(GET_DEPARTMENTS_QUERY, {
-      variables: { institution_id: currentInstitutionData?.id }
+    const { data: institutionsData, loading: institutionsLoading, refetch: refetchInstitutions } = useProtectedQuery(GET_INSTITUTIONS_LIGHT_QUERY, [PermissionResolverName.Institutions])
+    const { data: regionsData, loading: regionsLoading, refetch: refetchRegions } = useProtectedQuery(GET_REGIONS_QUERY, [PermissionResolverName.Regions])
+    const { data: churchesData, loading: churchesLoading, refetch: refetchChurches } = useProtectedQuery(GET_CHURCHES_QUERY, [PermissionResolverName.Churches])
+    const { data: departmentsData, loading: departmentsLoading, refetch: refetchDepartments } = useProtectedQuery(GET_DEPARTMENTS_QUERY, [PermissionResolverName.Departments], {
+      variables: { institution_id: currentInstitutionData?.id },
+      skip: !currentInstitutionData?.id
     })
-    const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useQuery(GET_ALL_ROLES_QUERY)
+    const { data: rolesData, loading: rolesLoading, refetch: refetchRoles } = useProtectedQuery(GET_ALL_ROLES_QUERY, [PermissionResolverName.Roles])
   
 
   const displayedInstitution = currentInstitutionData

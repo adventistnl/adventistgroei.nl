@@ -61,3 +61,9 @@ export const GET_INSTITUTION_BY_ID_FULL_DATA_QUERY = gql`
   }
   ${INSTITUTION_FRAGMENT}
 `;
+
+export const GET_AVAILABLE_YEARS_DYNAMIC = gql`
+  query GetAvailableYearsDynamic($entities: [AvailableYearsEntity!]!, $institution_id: String) {
+    availableYears(entities: $entities, institution_id: $institution_id)
+  }
+`;

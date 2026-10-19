@@ -2,12 +2,11 @@
 
 import * as React from "react"
 import { useState } from "react"
-import { GlobalSearch, useGlobalSearch, MobileSearchTrigger, SearchTrigger } from "@/components/global-search"
+import { GlobalSearch, useGlobalSearch, SearchTrigger } from "@/components/global-search"
 import { ResponsiveBreadcrumbs } from "@/components/responsive-breadcrumbs"
 import { ChatUsersSelector } from "@/components/chat/chat-users-selector"
 import { LanguageSelector } from "@/components/shared/language-selector"
 import { ThemeSwitcher } from "@/components/theme-switcher"
-import { NotificationsSidebar } from "@/components/notifications-sidebar"
 import { InviteModal } from "@/components/modals/invite-modal"
 import { MobileActionsMenu } from "@/components/shared/mobile-actions-menu"
 import { useTranslation } from "react-i18next"
@@ -17,8 +16,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { usePageContext } from "@/contexts/page-context"
 import { mockUsers } from "@/data/mockData"
 import { 
-  UserPlus, 
-  MessageCircle
+  UserPlus
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { WithPermission } from "@/hocs/with-permission"

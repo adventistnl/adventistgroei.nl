@@ -17,7 +17,6 @@ import {
   ArrowLeft,
   Mail,
   Calendar,
-  DollarSign,
   Layers
 } from "lucide-react"
 import { InstitutionById_institution } from "@/types/InstitutionById"

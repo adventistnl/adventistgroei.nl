@@ -1,4 +1,11 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
+
+import { useAvailableYears } from "@/hooks/use-available-years"
+import { AvailableYearsEntity } from "@/types/globalTypes"
+
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
@@ -21,19 +28,14 @@ import {
   Trash2,
   Users,
   Home,
-  DollarSign,
   Building,
-  Building2,
-  ContactRound,
   TrendingUp,
   Calendar,
   Shield,
-  MapPin,
   User,
   FileText,
   CheckCircle2,
-  Eye,
-  Crown
+  Eye
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -43,23 +45,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import toast from "react-hot-toast"
 import { departmentTranslations } from "@/lib/translations/departments"
-import { DataTable } from "@/components/ui/data-table"
-import { AddDepartmentModal, EditDepartmentModal, DeleteDepartmentModal } from "@/components/modals/department"
 import { useInstitution } from "@/contexts/institution-context"
-import { ContactViewEditModal, ContactData } from "@/components/modals/contact"
 import { ProtectedKPICarousel, type ProtectedKPICardData } from "@/components/shared/protected-kpi-carousel"
 import { DepartmentProjectOverTimeChart } from "@/components/institutions/charts/department-project-over-time-chart"
-import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { EntityInfoCard } from "@/components/shared/entity-info-card"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -75,17 +68,21 @@ import {
    InstitutionById_institution_departments as DepartmentData,
    InstitutionById_institution_churches as ChurchData
 } from "@/types/InstitutionById"
-import { PermissionResolverName, AnnualBudgetEntityType } from "@/types/graphql-global-types"
+import { PermissionResolverName } from "@/types/graphql-global-types"
 import { AccessDenied } from "@/components/access/access-denied"
 import { WithPermission } from "@/hocs/with-permission"
 import { useDepartmentKPIs } from "@/hooks/use-department-kpis"
 import { GridContainer } from "@/components/shared/grid-container"
 import { useQuery } from "@apollo/client"
 import { GET_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
-import { DepartmentLeadersCard } from "@/components/modals/department/department-leaders-card"
-import { DepartmentProjectsCard } from "@/components/modals/department/department-projects-card"
-import { DepartmentLeaderInfoCard } from "@/components/modals/department/department-leader-info-card"
 
+const AddDepartmentModal = dynamic(() => import('@/components/modals/department').then(mod => mod.AddDepartmentModal), { ssr: false });
+const EditDepartmentModal = dynamic(() => import('@/components/modals/department').then(mod => mod.EditDepartmentModal), { ssr: false });
+const DeleteDepartmentModal = dynamic(() => import('@/components/modals/department').then(mod => mod.DeleteDepartmentModal), { ssr: false });
+const ContactData = dynamic(() => import('@/components/modals/contact').then(mod => mod.ContactData), { ssr: false });
+const DepartmentLeadersCard = dynamic(() => import('@/components/modals/department/department-leaders-card').then(mod => mod.DepartmentLeadersCard), { ssr: false });
+const DepartmentProjectsCard = dynamic(() => import('@/components/modals/department/department-projects-card').then(mod => mod.DepartmentProjectsCard), { ssr: false });
+const DepartmentLeaderInfoCard = dynamic(() => import('@/components/modals/department/department-leader-info-card').then(mod => mod.DepartmentLeaderInfoCard), { ssr: false });
 
 /**
  * PÁGINA DE GESTÃO DE DEPARTAMENTOS DE IGREJAS
@@ -254,10 +251,7 @@ export default function ChurchDepartmentsPage() {
   
   // Year filter state
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [availableYears, setAvailableYears] = useState<number[]>(() => {
-    const currentYear = new Date().getFullYear()
-    return [currentYear, currentYear - 1, currentYear - 2].sort((a, b) => b - a)
-  })
+  const { availableYears, setAvailableYears } = useAvailableYears([AvailableYearsEntity.DEPARTMENT])
 
   usePageTitle({
     title: t.church_page?.title || "Church Departments"

@@ -13,14 +13,11 @@ import {
   Upload,
   X,
   File,
-  BarChart3,
-  Activity,
   ChevronLeft,
   ChevronRight,
   CheckCircle,
   Download,
-  FileSpreadsheet,
-  AlertCircle
+  FileSpreadsheet
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -49,7 +46,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"

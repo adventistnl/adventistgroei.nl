@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Shield, Save, Lock, Settings } from "lucide-react"
 
 import toast from "react-hot-toast"
-import { useRoles } from "@/hooks/use-roles"
 import { User } from "@/data/accessData"
 import { Roles_roles } from "@/types/Roles"
 import { useMutation } from "@apollo/client/react"

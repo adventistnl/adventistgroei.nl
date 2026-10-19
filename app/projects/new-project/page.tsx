@@ -1,37 +1,24 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, Suspense, useRef } from "react"
+import React, { useState, useEffect, Suspense, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Progress } from "@/components/ui/progress"
 import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group"
+
+
+
+
+
+
 import {
   Dialog,
   DialogContent,
@@ -49,7 +36,6 @@ import {
 import {
   Globe,
   Building,
-  Building2,
   DollarSign,
   Settings,
   CheckCircle,
@@ -61,39 +47,29 @@ import {
   ChevronDown,
   ChevronUp,
   Save,
-  X,
   Plus,
-  Minus,
   AlertTriangle,
   Calculator,
   Target,
-  Clock,
   Tag,
   Home,
   FileText,
   Info,
-  MapPin,
-  Check,
   TrendingUp,
   TrendingDown,
   Edit3,
-  BarChart3,
-  Coins,
   Banknote,
   PieChart,
   Sprout,
   Star,
   ShieldAlert
 } from "lucide-react"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
 import { useAuth } from "@/contexts/auth-context"
 import { projectRegisterTranslations } from "@/lib/translations/project-register"
 import { projectTranslations } from "@/lib/translations/projects"
-import { LanguageSelector } from "@/components/shared/language-selector"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Carousel,
@@ -102,21 +78,21 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import ActivityGroup from '@/components/projects/activity-group'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import { EventRegistrationForm, EventFormData } from "@/components/shared/event-registration-form"
-import { CommunicationForm, CommunicationFormData } from "@/components/shared/communication-form"
-import { KPICards, KPICardData } from "@/components/shared/kpi-cards-carousel"
-import { UserMultiSelector, User } from "@/components/shared/user-multi-selector"
-import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
-import { ProjectDataStep } from "@/components/projects/steps/project-data-step"
+import dynamic from "next/dynamic"
+
+// Type imports
+import type { KPICardData } from "@/components/shared/kpi-cards-carousel"
+import type { User } from "@/components/shared/user-multi-selector"
+import type { UserAvatarData } from "@/components/shared/users-avatar-group"
+
+// Dynamic component imports
+const ActivityGroup = dynamic(() => import('@/components/projects/activity-group'), { ssr: false, loading: () => <div className="h-[400px] w-full animate-pulse bg-muted rounded-md" /> })
+const EventRegistrationForm = dynamic(() => import("@/components/shared/event-registration-form").then(mod => mod.EventRegistrationForm), { ssr: false, loading: () => <div className="h-[400px] w-full animate-pulse bg-muted rounded-md" /> })
+const CommunicationForm = dynamic(() => import("@/components/shared/communication-form").then(mod => mod.CommunicationForm), { ssr: false, loading: () => <div className="h-[400px] w-full animate-pulse bg-muted rounded-md" /> })
+const KPICards = dynamic(() => import("@/components/shared/kpi-cards-carousel").then(mod => mod.KPICards), { ssr: false, loading: () => <div className="h-[120px] w-full animate-pulse bg-muted rounded-md" /> })
+const UserMultiSelector = dynamic(() => import("@/components/shared/user-multi-selector").then(mod => mod.UserMultiSelector), { ssr: false })
+const UsersAvatarGroup = dynamic(() => import("@/components/shared/users-avatar-group").then(mod => mod.UsersAvatarGroup), { ssr: false })
+const ProjectDataStep = dynamic(() => import("@/components/projects/steps/project-data-step").then(mod => mod.ProjectDataStep), { ssr: false, loading: () => <div className="h-[400px] w-full animate-pulse bg-muted rounded-md" /> })
 import type { ProjectFormData, ProjectActivity } from "@/components/projects/types"
 type FormData = ProjectFormData
 type Activity = ProjectActivity
@@ -231,7 +207,7 @@ function ProjectRegisterContent() {
   // Helper to render tag with icon and translation
   const renderTagWithIcon = (tagKey: string, className?: string) => {
     const IconComponent = TAG_ICONS[tagKey] || Tag
-    const translatedTag = t(`projectRegister.tags.${tagKey}`)
+    const translatedTag = t(`projectRegister.tags.${tagKey}`, { defaultValue: tagKey })
     return (
       <Badge key={tagKey} variant="outline" className={cn("text-xs px-2 py-1 bg-muted/50 flex items-center gap-1", className)}>
         <IconComponent className="w-3 h-3" />
@@ -281,9 +257,25 @@ function ProjectRegisterContent() {
 
       // Navigation is handled in handleSubmit after role assignment
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      // When the backend returns HTTP 400, Apollo treats the response as a networkError.
+      let graphQLError = error.graphQLErrors?.[0]
+      if (!graphQLError && error?.networkError?.result?.errors) {
+        graphQLError = error.networkError.result.errors[0]
+      }
+
+      const ext = graphQLError?.extensions as any
+      const errorCode = ext?.context?.additional?.errorCode || ext?.additional?.errorCode || ext?.code;
+
+      if (errorCode === 'CHURCH_HAS_NO_LEADER') {
+        // Use custom parsed error message
+        const message = (translations as any).errors?.churchHasNoLeader || graphQLError?.message || 'A igreja não possui um líder atribuído.'
+        toast.error(message)
+        return
+      }
+
       // Extract user-friendly error message
-      const errorMessage = error.graphQLErrors?.[0]?.message || error.message || 'Erro desconhecido'
+      const errorMessage = graphQLError?.message || error.message || 'Erro desconhecido'
       // Only show the first line of the error (not the stack trace)
       const userFriendlyMessage = errorMessage.split('\n')[0]
       toast.error(`${translations.toast.failedToSave}: ${userFriendlyMessage}`)
@@ -458,7 +450,23 @@ function ProjectRegisterContent() {
       if (!raw) return
       const draft = JSON.parse(raw)
 
-      if (draft?.formData) setFormData(prev => ({ ...prev, ...draft.formData }))
+      if (draft?.formData) {
+        const scrubbedActivities = draft.formData.activities?.map((act: any) => ({
+          ...act,
+          tags: act.tags?.filter((t: string) => 
+            t !== "Projeto Especial" && 
+            t !== "Church Planting" &&
+            t !== "specialProject" &&
+            t !== "churchPlanting"
+          ) || []
+        })) || []
+        
+        setFormData(prev => ({ 
+          ...prev, 
+          ...draft.formData,
+          activities: scrubbedActivities
+        }))
+      }
       if (typeof draft?.manualAmount === 'number') setManualAmount(draft.manualAmount)
       if (typeof draft?.manualPercentage === 'number') setManualPercentage(draft.manualPercentage)
       if (typeof draft?.isManualEntry === 'boolean') setIsManualEntry(draft.isManualEntry)
@@ -467,7 +475,7 @@ function ProjectRegisterContent() {
       if (typeof draft?.currentStep === 'number') setCurrentStep(draft.currentStep)
       if (draft?.currentActivity) setCurrentActivity(prev => ({ ...prev, ...draft.currentActivity }))
       if (draft?.editingActivityId) setEditingActivityId(draft.editingActivityId)
-      toast.success(translations.toast.draftLoaded)
+      toast.success(translations.toast.draftLoaded, { id: 'draftLoaded' })
     } catch (err) {
       // ignore parse errors
     }
@@ -505,41 +513,41 @@ function ProjectRegisterContent() {
   const clearDraft = () => {
     try {
       sessionStorage.removeItem(DRAFT_KEY)
-      toast.success(translations.toast.draftCleared)
+      toast.success(translations.toast.draftCleared, { id: 'draftCleared' })
     } catch {
       // ignore
     }
   }
 
-  // Auto-add special project tags based on selection
+  // Sync special case flags with activities tags
   useEffect(() => {
-    if (isSpecialProject || isChurchPlanting) {
-      // Add special project tags to all activities
-      setFormData(prev => ({
-        ...prev,
-        activities: prev.activities.map(activity => {
-          const newTags = [...activity.tags]
+    setFormData(prev => ({
+      ...prev,
+      activities: prev.activities.map(activity => {
+        const newTags = [...activity.tags]
 
-          // Remove previous special tags
-          const filteredTags = newTags.filter(tag =>
-            tag !== "Projeto Especial" && tag !== "Church Planting"
-          )
+        // Remove previous special tags (including old legacy strings from drafts)
+        const filteredTags = newTags.filter(tag =>
+          tag !== "specialProject" && 
+          tag !== "churchPlanting" && 
+          tag !== "Projeto Especial" && 
+          tag !== "Church Planting"
+        )
 
-          // Add current special tag
-          if (isSpecialProject && !filteredTags.includes("Projeto Especial")) {
-            filteredTags.push("Projeto Especial")
-          }
-          if (isChurchPlanting && !filteredTags.includes("Church Planting")) {
-            filteredTags.push("Church Planting")
-          }
+        // Add current special tag
+        if (isSpecialProject && !filteredTags.includes("specialProject")) {
+          filteredTags.push("specialProject")
+        }
+        if (isChurchPlanting && !filteredTags.includes("churchPlanting")) {
+          filteredTags.push("churchPlanting")
+        }
 
-          return {
-            ...activity,
-            tags: filteredTags
-          }
-        })
-      }))
-    }
+        return {
+          ...activity,
+          tags: filteredTags
+        }
+      })
+    }))
   }, [isSpecialProject, isChurchPlanting])
 
   // Set co_owner_id to current logged-in user on mount and whenever currentUser changes
@@ -624,7 +632,8 @@ function ProjectRegisterContent() {
       // Create a new activity object with updated is_subsidized property
       const updatedActivity: ProjectActivity = {
         ...activity,
-        is_subsidized: newIsSubsidized
+        is_subsidized: newIsSubsidized,
+        request_subsidy: newIsSubsidized
       }
 
       currentActivities.push(updatedActivity)
@@ -754,7 +763,10 @@ function ProjectRegisterContent() {
 
         if (isChurchPlanting) {
           if (!churchPlantingJustification.trim()) {
-            newErrors.church_planting_justification = t('projectRegister.fundingDistribution.churchPlantingDetailsRequired')
+            newErrors.church_planting_justification = t('projectRegister.fundingDistribution.churchPlantingDetailsRequired', 'Detalhes do projeto são obrigatórios')
+          }
+          if (!formData.location_church_plant?.trim()) {
+            newErrors.location_church_plant = t('projectRegister.fundingDistribution.locationRequired', 'Localização é obrigatória')
           }
         }
         break
@@ -914,7 +926,7 @@ function ProjectRegisterContent() {
     const translatedDescription = t(`projectRegister.quickActivities.${predefinedActivity.key}.description`)
 
     // Convert tagKeys to translated tags for display (store keys in database)
-    const translatedTags = predefinedActivity.tagKeys.map(tagKey => t(`projectRegister.tags.${tagKey}`))
+    const translatedTags = predefinedActivity.tagKeys.map(tagKey => t(`projectRegister.tags.${tagKey}`, { defaultValue: tagKey }))
 
     // Pre-populate assignee_ids with project responsible (owner) if available
     const defaultAssigneeIds = formData.responsible_id ? [formData.responsible_id] : []
@@ -988,17 +1000,17 @@ function ProjectRegisterContent() {
       // Map tag strings to ActivityTags enum
       const mapTagToEnum = (tag: string): string => {
         const tagMap: Record<string, string> = {
-          'Equipamentos': 'EQUIPMENT',
-          'Materiais': 'MATERIALS',
-          'Serviços': 'SERVICES',
-          'Viagens': 'TRAVEL',
-          'Eventos': 'EVENT',
-          'Transporte': 'TRANSPORT',
-          'Marketing': 'MARKETING',
-          'Reforma': 'REFORM',
-          'Treinamento': 'TRAINING',
-          'Alimentação': 'FEEDING',
-          'Hospedagem': 'ACCOMMODATION',
+          'equipment': 'EQUIPMENT',
+          'materials': 'MATERIALS',
+          'services': 'SERVICES',
+          'travel': 'TRAVEL',
+          'events': 'EVENT',
+          'transport': 'TRANSPORT',
+          'marketing': 'MARKETING',
+          'reform': 'REFORM',
+          'training': 'TRAINING',
+          'food': 'FEEDING',
+          'accommodation': 'ACCOMMODATION',
         }
         return tagMap[tag] || 'MATERIALS'
       }
@@ -1046,8 +1058,10 @@ function ProjectRegisterContent() {
           budget_amount: activity.budget_amount,
           deadline: activityDeadline,
           assignee_ids: finalAssigneeIds,
-          tags: activity.tags.map(mapTagToEnum), // Already sending as array - correct!
-          is_subsidized: activity.is_subsidized ?? false, // Include is_subsidized flag
+          tags: activity.tags
+            .filter(t => t !== 'specialProject' && t !== 'churchPlanting' && t !== 'Projeto Especial' && t !== 'Church Planting')
+            .map(mapTagToEnum),
+          is_subsidized: activity.is_subsidized ?? false,
           activity_funding: {
             entity_contribution_amount: activitySubsidy,
             entity_contribution_percent: activity.is_subsidized ? 65 : 0,
@@ -1080,6 +1094,7 @@ function ProjectRegisterContent() {
           : undefined,
         activities: mappedActivities,
         is_special_case: isSpecialProject || isChurchPlanting || false,
+        special_case_type: isChurchPlanting ? 'CHURCH_PLANTING' : (isSpecialProject ? 'SPECIAL' : undefined),
         special_case_reason: isChurchPlanting ? churchPlantingJustification : specialProjectJustification,
         location_church_plant: formData.location_church_plant,
         special_budget: formData.special_budget,
@@ -1108,6 +1123,7 @@ function ProjectRegisterContent() {
 
       // Guard: if creation failed, onError already showed the toast — do not redirect
       if (!result?.data) {
+        setIsLoading(false)
         return
       }
 
@@ -1587,7 +1603,7 @@ function ProjectRegisterContent() {
                           : "hover:bg-muted hover:border-primary/50"
                       )}
                     >
-                      {t(`projectRegister.tags.${tagKey}`)}
+                      {t(`projectRegister.tags.${tagKey}`, { defaultValue: tagKey })}
                     </Button>
                   ))}
                 </div>
@@ -2009,13 +2025,25 @@ function ProjectRegisterContent() {
 
                           {isChurchPlanting && (
                             <div className="space-y-2">
-                              <Label htmlFor="location">{t('projectRegister.fundingDistribution.plantingLocation')}</Label>
+                              <Label htmlFor="location">
+                                {t('projectRegister.fundingDistribution.plantingLocation')}
+                                <span className="text-red-500 ml-1">*</span>
+                              </Label>
                               <Input
                                 id="location"
                                 placeholder={t('projectRegister.fundingDistribution.locationPlaceholder')}
                                 value={formData.location_church_plant || ''}
-                                onChange={(e) => setFormData({ ...formData, location_church_plant: e.target.value })}
+                                onChange={(e) => {
+                                  setFormData({ ...formData, location_church_plant: e.target.value })
+                                  if (errors.location_church_plant) {
+                                    setErrors(prev => ({ ...prev, location_church_plant: '' }))
+                                  }
+                                }}
+                                className={errors.location_church_plant ? "border-red-500 focus-visible:ring-red-500" : ""}
                               />
+                              {errors.location_church_plant && (
+                                <p className="text-sm text-red-500 mt-1">{errors.location_church_plant}</p>
+                              )}
                             </div>
                           )}
                         </div>
@@ -2504,8 +2532,8 @@ function ProjectRegisterContent() {
     const selfContribution = formData.church_contribution
     const requestContribution = formData.institution_contribution
 
-    const subsidizedActivities = formData.activities.filter(a => a.request_subsidy)
-    const nonSubsidizedActivities = formData.activities.filter(a => !a.request_subsidy)
+    const subsidizedActivities = formData.activities.filter(a => a.is_subsidized)
+    const nonSubsidizedActivities = formData.activities.filter(a => !a.is_subsidized)
 
     const totalActivities = formData.activities.length
     const averageActivityCost = totalActivities > 0 ? totalBudget / totalActivities : 0
@@ -2737,6 +2765,35 @@ function ProjectRegisterContent() {
                             </div>
                           </div>
                         </div>
+
+                        {formData.project_responsible_type === 'church' && (
+                          <div className="flex flex-wrap gap-x-8 gap-y-4 py-4 border-t border-border">
+                            <div className="flex items-start gap-3 flex-1 min-w-[200px]">
+                              <Building className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-muted-foreground mb-0.5">{t('projectRegister.responsibilityTypes.church', 'Igreja')}</p>
+                                <p className="text-sm font-medium text-foreground break-words">
+                                  {churches.find((c: any) => c.id === formData.church_id)?.name ?? '—'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3 flex-1 min-w-[200px]">
+                              <Target className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-muted-foreground mb-0.5">{t('projectRegister.fields.churchDepartment', 'Departamento da Igreja')}</p>
+                                <p className="text-sm font-medium text-foreground">
+                                  {(() => {
+                                    if (!formData.church_id || !formData.church_department_id) return '—';
+                                    const church = currentInstitutionData?.churches?.find((c: any) => c.id === formData.church_id);
+                                    if (!church) return '—';
+                                    const dept = church.departments?.find((d: any) => d.id === formData.church_department_id);
+                                    return dept ? dept.name : '—';
+                                  })()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Responsible People — owner + co-owner with avatars and name labels */}
                         <div className="flex items-start gap-3 py-4">

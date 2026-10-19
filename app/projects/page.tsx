@@ -1,10 +1,16 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
+
+import { useAvailableYears } from "@/hooks/use-available-years"
+import { AvailableYearsEntity } from "@/types/globalTypes"
+
 
 import React, { useState, useEffect, useMemo, Suspense, useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@apollo/client"
 import { useRouter, useSearchParams } from "next/navigation"
-import { AppLoader } from "@/components/shared/app-loader"
 import { ProjectsPageSkeleton } from "@/components/shared/page-skeleton"
 import { AppLayout } from "@/components/layouts/app-layout"
 import { usePageTitle } from "@/hooks/use-page-title"
@@ -32,7 +38,7 @@ import { projectTranslations } from "@/lib/translations/projects"
 import { GET_PROJECTS_QUERY, GET_PROJECT_KPIS_QUERY, GET_MY_PROJECTS_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { DELETE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_DEPARTMENTS_QUERY } from "@/graphql/queries/DEPARTMENTS_QUERY"
-import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Eye, Edit, Activity, TrendingUp, Users, DollarSign, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2, ListChecks, LayoutGrid, List, ExternalLink, Info, ShieldAlert } from "lucide-react"
+import { Globe, Plus, RefreshCw, Building, MoreHorizontal, Edit, Users, Folder, ArrowRight, Calendar, Building2, Clock, CheckCircle2, ListChecks, LayoutGrid, List, ExternalLink, Info, ShieldAlert } from "lucide-react"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { useInstitution } from "@/contexts/institution-context"
 import { useCurrency } from "@/contexts/currency-context"
@@ -43,21 +49,20 @@ import { ProjectsOverTimeChart } from "@/components/projects/charts/projects-ove
 import { ResponsiveGridCarousel } from "@/components/shared/responsive-grid-carousel"
 import { UseTable } from "@/components/ui/use-table"
 import { PageFilters, FilterConfig } from "@/components/shared/page-filters"
-import { createProjectColumns } from "@/components/projects/projects-table-columns"
-import { EditProjectModal } from "@/components/modals/project/edit-project-modal"
-import { DetailsViewProjectModal } from "@/components/modals/project/details-view-project-modal"
 import { UsersAvatarGroup, UserAvatarData } from "@/components/shared/users-avatar-group"
 import { SpecialProjectBadge, getSpecialProjectColors } from "@/components/projects/special-project-badge"
 import { MyProjectsFilter } from "@/components/shared/my-projects-filter"
 import { YearFilter } from "@/components/shared/year-filter"
-import { ProjectKanbanView } from "@/components/projects/project-kanban-view"
-import { ProjectRefundRequestsCard } from "@/components/projects/project-refund-requests-card"
 import { PROJECT_STATUS_CONFIG, PROJECT_STATUS_ORDER } from "@/components/projects/project-header"
 import { WithPermission } from "@/hocs/with-permission"
 import { PermissionResolverName } from "@/types/graphql-global-types"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 import { useAuth } from "@/contexts/auth-context"
+
+const EditProjectModal = dynamic(() => import('@/components/modals/project/edit-project-modal').then(mod => mod.EditProjectModal), { ssr: false });
+const DetailsViewProjectModal = dynamic(() => import('@/components/modals/project/details-view-project-modal').then(mod => mod.DetailsViewProjectModal), { ssr: false });
+const ProjectKanbanView = dynamic(() => import('@/components/projects/project-kanban-view').then(mod => mod.ProjectKanbanView), { ssr: false });
 
 // Internal component that uses useSearchParams - wrapped in Suspense
 function ProjectsPageContent() {
@@ -124,10 +129,7 @@ function ProjectsPageContent() {
   
   // Year filter states
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
-  const [availableYears, setAvailableYears] = useState<number[]>(() => {
-    const currentYear = new Date().getFullYear()
-    return [currentYear, currentYear - 1, currentYear - 2].sort((a, b) => b - a)
-  })
+  const { availableYears, setAvailableYears } = useAvailableYears([AvailableYearsEntity.PROJECT])
 
   // Get translations for current language
   const t_project = projectTranslations[i18n.language as keyof typeof projectTranslations] || projectTranslations.en

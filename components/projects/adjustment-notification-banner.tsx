@@ -28,12 +28,12 @@ import { cn } from "@/lib/utils"
 import {
   useProjectHistory,
   buildAdjustmentResolvedPayload,
-  buildStatusChangedPayload,
 } from "@/hooks/graphql/use-project-history"
 import { ProjectHistoryType } from "@/types/project-history"
 import { UPDATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { GET_PROJECT_BY_ID_QUERY } from "@/graphql/queries/PROJECTS_QUERY"
 import { projectTranslations } from "@/lib/translations/projects"
+import toast from "react-hot-toast"
 
 interface AdjustmentNotificationBannerProps {
   projectId: string
@@ -76,9 +76,21 @@ export function AdjustmentNotificationBanner({
   const [updateProjectStatus] = useMutation(UPDATE_PROJECT_MUTATION, {
     refetchQueries: [{ query: GET_PROJECT_BY_ID_QUERY, variables: { id: projectId } }],
     onCompleted: () => {
-      console.log("[AdjustmentBanner] project status updated → IN_REVIEW")
       onResolved?.()
     },
+    onError: (error: any) => {
+      const errorCode = error?.graphQLErrors?.[0]?.extensions?.additional?.errorCode ||
+        error?.networkError?.result?.errors?.[0]?.extensions?.additional?.errorCode
+
+      if (errorCode) {
+        // Since t is the translation object in this file, we access it as a dictionary
+        const translation = (t as any).errors?.[errorCode]
+        toast.error(translation || error.message)
+      } else {
+        toast.error(error.message || "Failed to update project status")
+      }
+      setResolving(false)
+    }
   })
 
   // Find the most recent ADJUSTMENT_NEEDED entry

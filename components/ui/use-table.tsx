@@ -48,12 +48,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
 import { BatchActionsPanel, BatchAction } from "@/components/shared/batch-actions-panel"
-import { InlineBatchEditor, BatchEditField } from "@/components/shared/inline-batch-editor"
+import { BatchEditField } from "@/components/shared/inline-batch-editor"
 
 // Extend ColumnMeta to include responsive property
 declare module '@tanstack/react-table' {

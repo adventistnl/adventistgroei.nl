@@ -12,11 +12,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { usePageContext } from "@/contexts/page-context"

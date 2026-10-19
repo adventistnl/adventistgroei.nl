@@ -6,9 +6,7 @@ import { useTranslation } from "react-i18next"
 import { 
   CalendarIcon, 
   Calendar,
-  MapPin,
   Users,
-  DollarSign,
   Building,
   Globe,
   Church,

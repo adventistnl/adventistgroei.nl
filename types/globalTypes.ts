@@ -104,6 +104,19 @@ export enum AvailabilityStatus {
   VACATION = "VACATION",
 }
 
+/**
+ * Entities available for minimum year query
+ */
+export enum AvailableYearsEntity {
+  ANNUAL_BUDGET = "ANNUAL_BUDGET",
+  CHURCH = "CHURCH",
+  DEPARTMENT = "DEPARTMENT",
+  INSTITUTION = "INSTITUTION",
+  PROJECT = "PROJECT",
+  SUBSIDY_REQUEST = "SUBSIDY_REQUEST",
+  USER = "USER",
+}
+
 export enum ChurchType {
   COMPANY = "COMPANY",
   PLANT = "PLANT",

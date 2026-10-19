@@ -1,4 +1,7 @@
+
 "use client"
+
+import dynamic from "next/dynamic";
 
 import React, { useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -9,18 +12,18 @@ import { Badge } from "@/components/ui/badge"
 import { 
   Settings, 
   RefreshCw,
-  Building,
-  DollarSign
+  Building
 } from "lucide-react"
 import toast from "react-hot-toast"
 import "@/lib/i18n"
 
 // Components
-import { FundingRulesManager } from "@/components/funding-rules/funding-rules-manager"
 import { useInstitution } from "@/contexts/institution-context"
 import { WithPermission } from "@/hocs/with-permission"
 import { AccessDenied } from "@/components/access/access-denied"
 import { PermissionResolverName } from "@/types/graphql-global-types"
+
+const FundingRulesManager = dynamic(() => import('@/components/funding-rules/funding-rules-manager').then(mod => mod.FundingRulesManager), { ssr: false });
 
 export default function FundingRulesPage() {
   const { t } = useTranslation()

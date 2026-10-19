@@ -7,10 +7,7 @@ import { PieSectorDataItem } from "recharts/types/polar/Pie"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import {
   ChartConfig,

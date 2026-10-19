@@ -16,8 +16,7 @@ import {
   CheckCircle,
   Calendar,
   Megaphone,
-  Users,
-  MapPin
+  Users
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -53,7 +52,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { projectTranslations } from "@/lib/translations/projects"
 import { mockDepartments } from "@/data/mockData"
-import { ProjectTableData } from "@/components/projects/projects-table"
 import { CREATE_PROJECT_MUTATION } from "@/graphql/mutations/PROJECT_MUTATIONS"
 import { ProjectType, LanguagePreference, EventType } from "@/types/globalTypes"
 

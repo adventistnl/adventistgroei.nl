@@ -5,12 +5,12 @@ import { User, UserVariables } from "@/types/User";
 
 export function useGetUserQuery(variables: UserVariables, options?: any) {
   const hasLoggedSkip = useRef(false);
-  
+
   const result = useQuery<User, UserVariables>(GET_USER_QUERY, {
     variables,
     skip: !variables.id,
-    fetchPolicy: 'cache-and-network', // Mostra cache instantaneamente, atualiza em background
-    errorPolicy: 'all', // Retorna dados parciais mesmo com erros
+    fetchPolicy: "cache-and-network", // Mostra cache instantaneamente, atualiza em background
+    errorPolicy: "all", // Retorna dados parciais mesmo com erros
     notifyOnNetworkStatusChange: true, // Notifica mudanças no status da rede
     ...options,
   });
@@ -24,7 +24,6 @@ export function useGetUserQuery(variables: UserVariables, options?: any) {
       hasLoggedSkip.current = false;
     }
   }, [variables.id]);
-
 
   return result;
 }

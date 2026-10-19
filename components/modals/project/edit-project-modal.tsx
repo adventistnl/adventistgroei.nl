@@ -7,9 +7,7 @@ import {
   CalendarIcon,
   Globe,
   Building,
-  DollarSign,
   Settings,
-  CheckCircle,
   Save,
   Check,
   ChevronsUpDown,
@@ -33,14 +31,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
+
+
 import {
   Popover,
   PopoverContent,
@@ -56,7 +48,6 @@ import {
 } from "@/components/ui/command"
 import { Progress } from "@/components/ui/progress"
 import { Calendar } from "@/components/ui/calendar"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { projectTranslations } from "@/lib/translations/projects"
 import { ProjectTableData } from "@/components/projects/projects-table"

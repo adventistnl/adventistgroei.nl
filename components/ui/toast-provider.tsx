@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { Toaster, toast as hotToast, ToastBar, Toast } from 'react-hot-toast'
+import { Toaster, toast as hotToast, ToastBar } from 'react-hot-toast'
 import { X } from 'lucide-react'
 import { Button } from './button'
 
@@ -94,6 +94,7 @@ export function ToastProvider() {
 export const toast = {
   success: (message: string, options?: any) => {
     return hotToast.success(message, {
+      id: options?.id || message,
       ...options,
       style: {
         background: 'hsl(var(--card))',
@@ -106,6 +107,7 @@ export const toast = {
   
   error: (message: string, options?: any) => {
     return hotToast.error(message, {
+      id: options?.id || message,
       ...options,
       style: {
         background: 'hsl(var(--card))',
@@ -118,6 +120,7 @@ export const toast = {
   
   loading: (message: string, options?: any) => {
     return hotToast.loading(message, {
+      id: options?.id || message,
       ...options,
       style: {
         background: 'hsl(var(--card))',
@@ -130,6 +133,7 @@ export const toast = {
   
   custom: (message: string, options?: any) => {
     return hotToast(message, {
+      id: options?.id || message,
       ...options,
       style: {
         background: 'hsl(var(--card))',
