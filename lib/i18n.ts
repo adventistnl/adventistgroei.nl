@@ -1446,6 +1446,7 @@ const resources = {
           }
         },
         toasts: {
+          ...projectTranslations.en.toasts,
           user_created: "User created successfully",
           user_updated: "User updated successfully",
           user_deleted: "User deleted successfully",
@@ -3547,6 +3548,7 @@ const resources = {
           }
         },
         toasts: {
+          ...projectTranslations.nl.toasts,
           user_created: "Gebruiker succesvol aangemaakt",
           user_updated: "Gebruiker succesvol bijgewerkt",
           user_deleted: "Gebruiker succesvol verwijderd",
@@ -5091,20 +5093,21 @@ const resources = {
           }
         },
         toasts: {
-          user_created: "Gebruiker succesvol aangemaakt",
-          user_updated: "Gebruiker succesvol bijgewerkt",
-          user_deleted: "Gebruiker succesvol verwijderd",
-          role_created: "Rol succesvol aangemaakt",
-          role_updated: "Rol succesvol bijgewerkt",
-          role_deleted: "Rol succesvol verwijderd",
-          role_assigned: "Rol succesvol toegewezen",
-          role_removed: "Rol succesvol verwijderd",
-          permissions_updated: "Machtigingen succesvol bijgewerkt",
-          access_denied: "Toegang geweigerd - onvoldoende machtigingen",
-          creating_role: "Rol aanmaken...",
-          updating_role: "Rol bijwerken...",
-          deleting_role: "Rol verwijderen...",
-          role_create_failed: "Kon rol niet aanmaken"
+          ...projectTranslations.pt.toasts,
+          user_created: "Usuário criado com sucesso",
+          user_updated: "Usuário atualizado com sucesso",
+          user_deleted: "Usuário excluído com sucesso",
+          role_created: "Função criada com sucesso",
+          role_updated: "Função atualizada com sucesso",
+          role_deleted: "Função excluída com sucesso",
+          role_assigned: "Função atribuída com sucesso",
+          role_removed: "Função removida com sucesso",
+          permissions_updated: "Permissões atualizadas com sucesso",
+          access_denied: "Acesso negado - permissões insuficientes",
+          creating_role: "Criando função...",
+          updating_role: "Atualizando função...",
+          deleting_role: "Excluindo função...",
+          role_create_failed: "Falha ao criar função"
         }
       },
 
