@@ -124,6 +124,12 @@ export const structureTranslations = {
       users: "Users",
       accessManagement: "Access Management",
       projects: "Projects",
+      schedule: "Schedule",
+      myAvailability: "My Availability",
+      scheduleOverview: "Overview",
+      invitations: "Invitations & Requests",
+      inviteTemplates: "Invite Templates",
+      gapReport: "Gap Report",
     },
     
     // Navigation Loading Messages
@@ -284,6 +290,12 @@ export const structureTranslations = {
       users: "Gebruikers",
       accessManagement: "Toegangsbeheer",
       projects: "Projecten",
+      schedule: "Preekrooster",
+      myAvailability: "Mijn Beschikbaarheid",
+      scheduleOverview: "Overzicht",
+      invitations: "Uitnodigingen & Aanvragen",
+      inviteTemplates: "Uitnodigingssjablonen",
+      gapReport: "Lacunerapport",
     },
     
     // Institutions
@@ -525,6 +537,12 @@ export const structureTranslations = {
       users: "Usuários",
       accessManagement: "Gestão de Acesso",
       projects: "Projetos",
+      schedule: "Agenda",
+      myAvailability: "Minha Disponibilidade",
+      scheduleOverview: "Grade Geral",
+      invitations: "Convites e Solicitações",
+      inviteTemplates: "Modelos de Convite",
+      gapReport: "Lacunas",
     },
     
     // Institutions

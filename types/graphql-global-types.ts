@@ -919,6 +919,7 @@ export enum AvailableYearsEntity {
   User = 'USER'
 }
 
+
 export type BoolFilter = {
   equals?: InputMaybe<Scalars['Boolean']['input']>;
   not?: InputMaybe<NestedBoolFilter>;
@@ -3080,6 +3081,7 @@ export type MonthlyUserRegistration = {
   count: Scalars['Int']['output'];
   month: Scalars['String']['output'];
 };
+
 
 export type Mutation = {
   __typename?: 'Mutation';
@@ -5273,6 +5275,7 @@ export type Query = {
   annualBudgets: Array<AnnualBudget>;
   assignmentInviteTemplates: Array<AssignmentInviteTemplate>;
   availableYears: Array<Scalars['Int']['output']>;
+
   budgetDistribution: BudgetDistribution;
   budgetKPIs: BudgetKpIs;
   checkEmailAvailability: EmailVerificationResponse;
