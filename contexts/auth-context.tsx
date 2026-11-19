@@ -44,7 +44,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     try {
       const cookies = getCookies();
-      
+
+      // O cookie HttpOnly do backend fica no domínio da API (cross-site) e NÃO é
+      // visível para o middleware do Next. Por isso mantemos também um cookie
+      // `auth-token` no domínio do frontend. Sem ele (ou expirado), o middleware
+      // redireciona para /login — então tratamos como não autenticado para
+      // evitar o loop infinito de loading.
+      const rawStoredToken = cookies['auth-token'];
+      if (!validateToken(rawStoredToken)) throw new Error('invalid token');
+
       const storedUser = localStorage.getItem('auth-user');
       const rawPermissions = cookies['auth-permissions'];
       let decodedPermissions = rawPermissions ? JSON.parse(rawPermissions) : [];
@@ -104,7 +112,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Armazenar user no localStorage
         localStorage.setItem('auth-user', JSON.stringify(data.login.user));
-        // Permissões ainda podem ficar no JS/Cookie comum, mas token é HttpOnly via backend
+        // Cookie no domínio do frontend, necessário para o middleware do Next
+        // (o cookie HttpOnly do backend fica no domínio da API e não é visível aqui)
+        setCookie('auth-token', accessToken, { path: '/', sameSite: 'Strict', secure: isProduction, maxAge });
         setCookie('auth-permissions', JSON.stringify(permissions), { path: '/', sameSite: 'Strict', secure: isProduction, maxAge });
         setToken("httpOnly-cookie-managed-by-browser");
         setUser(data.login.user);
